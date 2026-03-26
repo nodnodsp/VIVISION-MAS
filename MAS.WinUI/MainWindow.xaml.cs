@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
+using MAS.Application.Abstractions;
 using MAS.Application.Services;
 using MAS.Core.Entities;
 using MAS.Core.Enums;
@@ -11,6 +12,7 @@ using MAS.Infrastructure.Configuration;
 using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Operations;
 using MAS.Infrastructure.Repositories;
+using MAS.Infrastructure.Runtime;
 
 namespace MAS.WinUI;
 
@@ -29,12 +31,14 @@ public partial class MainWindow : Window
     private readonly SqliteMeasurementEffectResultRepository _effectResultRepository = new();
     private readonly SqliteReportExportRepository _reportExportRepository = new();
     private readonly SqliteOperationLogRepository _operationLogRepository = new();
-    private readonly MeasurementWorkflowService _workflowService;
-    private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
     private readonly MeasurementReportService _reportService;
     private readonly AppSettingsStore _appSettingsStore = new();
     private readonly DataMaintenanceService _dataMaintenanceService = new();
+    private readonly InstrumentRuntimeFactory _instrumentRuntimeFactory = new();
+    private IMeasurementWorkflowService _workflowService;
+    private IInstrumentConnectionService _instrumentConnectionService;
     private AppSettings _appSettings = new();
+    private string _runtimeDescription = "模拟仪器模式 / 无需真实串口协议";
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
     private IReadOnlyList<StandardSample> _allStandardSamples = Array.Empty<StandardSample>();
@@ -45,16 +49,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        _instrumentConnectionService = new SimulatedInstrumentConnectionService(
-            _instrumentRepository,
-            _calibrationRecordRepository);
-
-        _workflowService = new MeasurementWorkflowService(
-            _taskRepository,
-            _measurementRecordRepository,
-            _angleResultRepository,
-            _effectResultRepository,
-            new SimulatedInstrumentMeasurementService());
+        _workflowService = default!;
+        _instrumentConnectionService = default!;
 
         _reportService = new MeasurementReportService(
             _measurementRecordRepository,
@@ -67,10 +63,13 @@ public partial class MainWindow : Window
             _reportExportRepository,
             _operationLogRepository);
 
+        ConfigureRuntimeServices();
+
         InitializeComponent();
         DatabasePathText.Text = _bootstrapper.DatabasePath;
         SettingsPathTextBlock.Text = _appSettingsStore.SettingsPath;
         AppendLog("应用已启动。准备加载数据库状态。");
+        AppendLog($"当前仪器运行模式: {_runtimeDescription}");
     }
 
     private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
@@ -102,6 +101,7 @@ public partial class MainWindow : Window
 
         _appSettings = settings;
         await _appSettingsStore.SaveAsync(_appSettings);
+        ConfigureRuntimeServices();
         ApplySettingsToInputs();
         UpdateSettingsSummary();
         AppendLog("系统设置已保存。");
@@ -686,13 +686,22 @@ public partial class MainWindow : Window
             return;
         }
 
-        var updated = connect
-            ? await _instrumentConnectionService.ConnectAsync(instrument.Id)
-            : await _instrumentConnectionService.DisconnectAsync(instrument.Id);
-        await WriteOperationLogAsync("instrument", connect ? "connect" : "disconnect", "success", $"仪器{(connect ? "连接" : "断开")} {updated.InstrumentCode}");
-        SelectInstrument(updated);
-        AppendLog(connect ? $"仪器已连接: {updated.InstrumentCode}" : $"仪器已断开: {updated.InstrumentCode}");
-        await RefreshAllDataAsync();
+        try
+        {
+            var updated = connect
+                ? await _instrumentConnectionService.ConnectAsync(instrument.Id)
+                : await _instrumentConnectionService.DisconnectAsync(instrument.Id);
+            await WriteOperationLogAsync("instrument", connect ? "connect" : "disconnect", "success", $"仪器{(connect ? "连接" : "断开")} {updated.InstrumentCode}");
+            SelectInstrument(updated);
+            AppendLog(connect ? $"仪器已连接: {updated.InstrumentCode}" : $"仪器已断开: {updated.InstrumentCode}");
+            await RefreshAllDataAsync();
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"仪器{(connect ? "连接" : "断开")}失败: {ex.Message}");
+            await WriteOperationLogAsync("instrument", connect ? "connect" : "disconnect", "failed", ex.Message);
+            MessageBox.Show(this, ex.Message, "仪器连接", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private async Task CalibrateInstrumentAsync(string calibrationType)
@@ -705,11 +714,20 @@ public partial class MainWindow : Window
             return;
         }
 
-        var record = await _instrumentConnectionService.CalibrateAsync(instrument.Id, calibrationType);
-        await WriteOperationLogAsync("instrument", "calibration", "success", $"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成", recordId: record.Id);
-        AppendLog($"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成: {instrument.InstrumentCode}");
-        await RefreshAllDataAsync();
-        CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(record.InstrumentId);
+        try
+        {
+            var record = await _instrumentConnectionService.CalibrateAsync(instrument.Id, calibrationType);
+            await WriteOperationLogAsync("instrument", "calibration", "success", $"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成", recordId: record.Id);
+            AppendLog($"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成: {instrument.InstrumentCode}");
+            await RefreshAllDataAsync();
+            CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(record.InstrumentId);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"仪器校准失败: {ex.Message}");
+            await WriteOperationLogAsync("instrument", "calibration", "failed", ex.Message);
+            MessageBox.Show(this, ex.Message, "仪器校准", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private async Task ExecuteWorkflowMeasurementAsync(string recordType, string displayName)
@@ -755,11 +773,25 @@ public partial class MainWindow : Window
         return latestTask?.TaskCode;
     }
 
-    private async Task LoadSettingsAsync()
+private async Task LoadSettingsAsync()
     {
         _appSettings = await _appSettingsStore.LoadAsync();
+        ConfigureRuntimeServices();
         ApplySettingsToInputs();
         UpdateSettingsSummary();
+    }
+
+    private void ConfigureRuntimeServices()
+    {
+        var runtimeServices = _instrumentRuntimeFactory.Create(_appSettings, _instrumentRepository, _calibrationRecordRepository);
+        _instrumentConnectionService = runtimeServices.ConnectionService;
+        _workflowService = new MeasurementWorkflowService(
+            _taskRepository,
+            _measurementRecordRepository,
+            _angleResultRepository,
+            _effectResultRepository,
+            runtimeServices.MeasurementService);
+        _runtimeDescription = runtimeServices.RuntimeDescription;
     }
 
     private void ApplySettingsToInputs()
@@ -770,6 +802,10 @@ public partial class MainWindow : Window
         SettingsIntervalSecondsTextBox.Text = _appSettings.DefaultIntervalSeconds.ToString(CultureInfo.InvariantCulture);
         SettingsTemplateCodeTextBox.Text = _appSettings.DefaultTemplateCode;
         SettingsPreviewLengthTextBox.Text = _appSettings.ReportPreviewMaxLength.ToString(CultureInfo.InvariantCulture);
+        SelectComboItemByText(SettingsRuntimeModeComboBox, _appSettings.InstrumentRuntimeMode);
+        SettingsInstrumentPortTextBox.Text = _appSettings.InstrumentPortName;
+        SettingsInstrumentBaudRateTextBox.Text = _appSettings.InstrumentBaudRate.ToString(CultureInfo.InvariantCulture);
+        SettingsInstrumentTimeoutTextBox.Text = _appSettings.InstrumentReadTimeoutMs.ToString(CultureInfo.InvariantCulture);
 
         if (string.IsNullOrWhiteSpace(StandardTemplateCodeTextBox.Text) || StandardTemplateCodeTextBox.Text == "TPL-DEFAULT")
         {
@@ -801,12 +837,26 @@ public partial class MainWindow : Window
             return false;
         }
 
+        if (!int.TryParse(SettingsInstrumentBaudRateTextBox.Text, out var baudRate) || baudRate <= 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(SettingsInstrumentTimeoutTextBox.Text, out var timeoutMs) || timeoutMs <= 0)
+        {
+            return false;
+        }
+
         settings.DefaultTaskType = (SettingsTaskTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "trial";
         settings.DefaultMeasurementMode = (SettingsMeasurementModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Single";
         settings.DefaultAverageCount = averageCount;
         settings.DefaultIntervalSeconds = intervalSeconds;
         settings.DefaultTemplateCode = string.IsNullOrWhiteSpace(SettingsTemplateCodeTextBox.Text) ? "TPL-DEFAULT" : SettingsTemplateCodeTextBox.Text.Trim();
         settings.ReportPreviewMaxLength = previewLength;
+        settings.InstrumentRuntimeMode = (SettingsRuntimeModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Simulated";
+        settings.InstrumentPortName = string.IsNullOrWhiteSpace(SettingsInstrumentPortTextBox.Text) ? "COM3" : SettingsInstrumentPortTextBox.Text.Trim();
+        settings.InstrumentBaudRate = baudRate;
+        settings.InstrumentReadTimeoutMs = timeoutMs;
         return true;
     }
 
@@ -814,8 +864,8 @@ public partial class MainWindow : Window
     {
         SettingsPathTextBlock.Text = _appSettingsStore.SettingsPath;
         SettingsUpdatedAtTextBlock.Text = $"最后更新时间: {_appSettings.UpdatedAt:yyyy-MM-dd HH:mm:ss}";
-        SettingsSummaryTextBlock.Text = $"默认任务类型 {_appSettings.DefaultTaskType}，默认测量模式 {_appSettings.DefaultMeasurementMode}，平均次数 {_appSettings.DefaultAverageCount}，间隔 {_appSettings.DefaultIntervalSeconds}s。";
-        SettingsImpactTextBlock.Text = $"默认模板 {_appSettings.DefaultTemplateCode}，报告预览最大字符数 {_appSettings.ReportPreviewMaxLength}。新建任务、标准样模板默认值和报告预览会使用这些设置。";
+        SettingsSummaryTextBlock.Text = $"默认任务类型 {_appSettings.DefaultTaskType}，默认测量模式 {_appSettings.DefaultMeasurementMode}，平均次数 {_appSettings.DefaultAverageCount}，间隔 {_appSettings.DefaultIntervalSeconds}s。当前仪器运行模式 {_appSettings.InstrumentRuntimeMode}。";
+        SettingsImpactTextBlock.Text = $"默认模板 {_appSettings.DefaultTemplateCode}，报告预览最大字符数 {_appSettings.ReportPreviewMaxLength}。串口参数：端口 {_appSettings.InstrumentPortName}，波特率 {_appSettings.InstrumentBaudRate}，超时 {_appSettings.InstrumentReadTimeoutMs}ms。运行时描述：{_runtimeDescription}";
     }
     private async Task EnsureDatabaseReadyAsync(bool forceLog = false)
     {
@@ -1159,7 +1209,7 @@ public partial class MainWindow : Window
         var latestCalibration = calibrationRecords.OrderByDescending(x => x.FinishedAt ?? x.StartedAt).FirstOrDefault();
         DashboardInstrumentDetailText.Text = defaultInstrument is null
             ? "未找到默认仪器。"
-            : $"{defaultInstrument.InstrumentName} / 端口 {(string.IsNullOrWhiteSpace(defaultInstrument.PortName) ? "-" : defaultInstrument.PortName)} / 最近校准 {(latestCalibration is null ? "暂无" : $"{latestCalibration.CalibrationType}:{latestCalibration.ResultCode}")}";
+            : $"{defaultInstrument.InstrumentName} / 端口 {(string.IsNullOrWhiteSpace(defaultInstrument.PortName) ? _appSettings.InstrumentPortName : defaultInstrument.PortName)} / 最近校准 {(latestCalibration is null ? "暂无" : $"{latestCalibration.CalibrationType}:{latestCalibration.ResultCode}")} / 运行模式 {_appSettings.InstrumentRuntimeMode}";
 
         var completedTasks = tasks.Count(x => x.Status == MAS.Core.Enums.TaskStatus.Completed);
         DashboardTaskCountText.Text = $"{tasks.Count} / {reportExports.Count}";
@@ -1192,7 +1242,7 @@ public partial class MainWindow : Window
     {
         InstrumentNameTextBox.Text = instrument.InstrumentName;
         InstrumentModelTextBox.Text = instrument.Model;
-        InstrumentConnectionTypeTextBox.Text = instrument.ConnectionType;
+        InstrumentConnectionTypeTextBox.Text = $"{instrument.ConnectionType} / {_appSettings.InstrumentRuntimeMode}";
         InstrumentPortTextBox.Text = instrument.PortName ?? "-";
         InstrumentStatusTextBox.Text = instrument.Status;
     }
@@ -1368,6 +1418,10 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
+
 
 
 

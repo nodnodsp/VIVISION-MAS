@@ -718,6 +718,17 @@
                             <TextBox x:Name="SettingsTemplateCodeTextBox" Text="TPL-DEFAULT" />
                             <TextBlock Text="报告预览最大字符数" Margin="0,10,0,4" />
                             <TextBox x:Name="SettingsPreviewLengthTextBox" Text="6000" />
+                            <TextBlock Text="仪器运行模式" Margin="0,10,0,4" />
+                            <ComboBox x:Name="SettingsRuntimeModeComboBox" SelectedIndex="0">
+                                <ComboBoxItem Content="Simulated" />
+                                <ComboBoxItem Content="SerialStub" />
+                            </ComboBox>
+                            <TextBlock Text="默认串口端口" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsInstrumentPortTextBox" Text="COM3" />
+                            <TextBlock Text="串口波特率" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsInstrumentBaudRateTextBox" Text="115200" />
+                            <TextBlock Text="读取超时（毫秒）" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsInstrumentTimeoutTextBox" Text="1500" />
                             <WrapPanel Margin="0,18,0,0">
                                 <Button Content="保存设置" Width="120" Height="40" Margin="0,0,10,10" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveSettingsButton_OnClick" />
                                 <Button Content="重新加载" Width="120" Height="40" Margin="0,0,10,10" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ReloadSettingsButton_OnClick" />
@@ -747,7 +758,7 @@
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Grid.Row="2" Header="生效说明" Foreground="White" BorderBrush="#334155">
-                                <TextBlock Margin="12" TextWrapping="Wrap" Foreground="#CBD5E1" Text="默认任务类型、测量模式、平均次数、测量间隔会应用到新建任务草稿。默认模板编号会作为标准样录入和任务草稿的默认模板。报告预览长度会影响报告中心右侧的预览截断长度。" />
+                                <TextBlock Margin="12" TextWrapping="Wrap" Foreground="#CBD5E1" Text="默认任务类型、测量模式、平均次数、测量间隔会应用到新建任务草稿。默认模板编号会作为标准样录入和任务草稿的默认模板。报告预览长度会影响报告中心右侧的预览截断长度。仪器运行模式与串口参数会影响连接、校准和测量服务的运行时选择。" />
                             </GroupBox>
                         </Grid>
                     </Grid>
@@ -779,6 +790,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 

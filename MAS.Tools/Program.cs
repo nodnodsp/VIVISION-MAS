@@ -1,7 +1,9 @@
 ﻿using MAS.Application.Services;
 using MAS.Core.Entities;
+using MAS.Infrastructure.Configuration;
 using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Repositories;
+using MAS.Infrastructure.Runtime;
 
 var bootstrapper = new SqliteScriptBootstrapper();
 await bootstrapper.EnsureCreatedAsync();
@@ -18,17 +20,19 @@ var angleResultRepository = new SqliteMeasurementAngleResultRepository();
 var effectResultRepository = new SqliteMeasurementEffectResultRepository();
 var reportExportRepository = new SqliteReportExportRepository();
 var operationLogRepository = new SqliteOperationLogRepository();
+var appSettingsStore = new AppSettingsStore();
+var appSettings = await appSettingsStore.LoadAsync();
+var runtimeFactory = new InstrumentRuntimeFactory();
+var runtimeServices = runtimeFactory.Create(appSettings, instrumentRepository, calibrationRecordRepository);
 
-var instrumentConnectionService = new SimulatedInstrumentConnectionService(
-    instrumentRepository,
-    calibrationRecordRepository);
+var instrumentConnectionService = runtimeServices.ConnectionService;
 var taskService = new MeasurementTaskService();
 var workflowService = new MeasurementWorkflowService(
     taskRepository,
     measurementRecordRepository,
     angleResultRepository,
     effectResultRepository,
-    new SimulatedInstrumentMeasurementService());
+    runtimeServices.MeasurementService);
 var reportService = new MeasurementReportService(
     measurementRecordRepository,
     taskRepository,
@@ -124,6 +128,7 @@ var latestTask = await taskRepository.GetByCodeAsync(task.TaskCode);
 Console.WriteLine("MAS V1 development tool");
 Console.WriteLine($"Database file: {bootstrapper.DatabasePath}");
 Console.WriteLine($"Schema resource: {bootstrapper.SchemaScriptPath}");
+Console.WriteLine($"Runtime mode: {appSettings.InstrumentRuntimeMode} / {runtimeServices.RuntimeDescription}");
 Console.WriteLine($"Instruments: {instruments.Count} / Default status={connectedInstrument.Status} / Port={connectedInstrument.PortName}");
 Console.WriteLine($"Calibration records: {calibrations.Count} / Latest={whiteCalibration.CalibrationType}:{whiteCalibration.ResultCode}");
 Console.WriteLine($"Samples: {samples.Count}");
@@ -146,4 +151,3 @@ if (latestRecord is not null)
     Console.WriteLine($"Effect results: {effectResults.Count}");
 }
 Console.WriteLine("Database bootstrap, workflow and report verification completed successfully.");
-
