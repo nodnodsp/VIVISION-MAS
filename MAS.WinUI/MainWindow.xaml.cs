@@ -281,6 +281,18 @@ public partial class MainWindow : Window
         await RefreshAllDataAsync();
     }
 
+    private async void ApplyTaskFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ApplyTaskFiltersAsync();
+    }
+
+    private async void ClearTaskFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        TaskFilterCodeTextBox.Clear();
+        TaskFilterStatusComboBox.SelectedIndex = 0;
+        await ApplyTaskFiltersAsync();
+    }
+
     private async void CreateDraftTaskButton_OnClick(object sender, RoutedEventArgs e)
     {
         await EnsureDatabaseReadyAsync();
@@ -648,7 +660,6 @@ public partial class MainWindow : Window
         SampleGrid.ItemsSource = _allSamples;
         StandardSampleGrid.ItemsSource = _allStandardSamples;
         TemplateGrid.ItemsSource = _allTemplates;
-        TaskGrid.ItemsSource = _allTasks;
         ApplyRecordFilters();
         ApplyReportFilters();
 
@@ -696,14 +707,7 @@ public partial class MainWindow : Window
         }
 
         var latestTask = tasks.LastOrDefault();
-        if (latestTask is not null)
-        {
-            await SelectTaskAsync(latestTask);
-        }
-        else
-        {
-            ClearTaskSummary();
-        }
+        await ApplyTaskFiltersAsync(latestTask?.Id);
 
         var selectedRecord = selectedRecordId is null
             ? records.FirstOrDefault()
@@ -727,6 +731,41 @@ public partial class MainWindow : Window
 
         ReportExportGrid.SelectedItem = selectedReport;
         LoadReportPreview(selectedReport);
+    }
+
+    private async Task ApplyTaskFiltersAsync(string? preferredTaskId = null)
+    {
+        var codeFilter = TaskFilterCodeTextBox?.Text?.Trim();
+        var statusFilter = (TaskFilterStatusComboBox?.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+        var filtered = _allTasks.Where(task =>
+        {
+            var matchesCode = string.IsNullOrWhiteSpace(codeFilter) || task.TaskCode.Contains(codeFilter, StringComparison.OrdinalIgnoreCase);
+            var matchesStatus = string.IsNullOrWhiteSpace(statusFilter) || statusFilter == "全部" || string.Equals(task.Status.ToString(), statusFilter, StringComparison.OrdinalIgnoreCase);
+            return matchesCode && matchesStatus;
+        }).ToList();
+
+        TaskGrid.ItemsSource = filtered;
+
+        MeasurementTask? nextTask = null;
+        if (!string.IsNullOrWhiteSpace(preferredTaskId))
+        {
+            nextTask = filtered.FirstOrDefault(x => x.Id == preferredTaskId);
+        }
+
+        nextTask ??= (TaskGrid.SelectedItem as MeasurementTask) is MeasurementTask selected && filtered.Any(x => x.Id == selected.Id)
+            ? selected
+            : filtered.FirstOrDefault();
+
+        if (nextTask is null)
+        {
+            TaskGrid.SelectedItem = null;
+            ClearTaskSummary();
+            return;
+        }
+
+        TaskGrid.SelectedItem = nextTask;
+        await SelectTaskAsync(nextTask);
     }
 
     private void ApplyRecordFilters()
@@ -1115,6 +1154,8 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
 
 
 

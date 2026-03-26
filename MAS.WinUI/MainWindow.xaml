@@ -377,7 +377,18 @@
                         <WrapPanel Margin="0,0,0,12">
                             <Button Content="新建任务草稿" Width="130" Height="40" Margin="0,0,10,0" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="CreateDraftTaskButton_OnClick" />
                             <Button Content="刷新任务列表" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="RefreshDataButton_OnClick" />
-                            <TextBlock Text="用于查看当前测量任务、状态流转和绑定信息。" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                            <TextBlock Text="任务编号" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,8,0" />
+                            <TextBox x:Name="TaskFilterCodeTextBox" Width="140" Margin="0,0,10,0" />
+                            <TextBlock Text="状态" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox x:Name="TaskFilterStatusComboBox" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                                <ComboBoxItem Content="全部" />
+                                <ComboBoxItem Content="Draft" />
+                                <ComboBoxItem Content="Running" />
+                                <ComboBoxItem Content="Completed" />
+                                <ComboBoxItem Content="Failed" />
+                            </ComboBox>
+                            <Button Content="筛选任务" Width="90" Height="34" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ApplyTaskFilterButton_OnClick" />
+                            <Button Content="清空" Width="70" Height="34" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearTaskFilterButton_OnClick" />
                         </WrapPanel>
                         <Grid Grid.Row="1" Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
@@ -701,6 +712,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 
