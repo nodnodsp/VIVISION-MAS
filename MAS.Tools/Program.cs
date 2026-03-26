@@ -103,7 +103,9 @@ await taskRepository.AddAsync(task);
 
 var standardResult = await workflowService.ExecuteMeasurementAsync(task.TaskCode, "standard");
 var trialResult = await workflowService.ExecuteMeasurementAsync(task.TaskCode, "trial");
-var reportResult = await reportService.ExportRecordReportAsync(trialResult.Record.Id);
+var markdownReportResult = await reportService.ExportRecordReportAsync(trialResult.Record.Id, "md");
+var htmlReportResult = await reportService.ExportRecordReportAsync(trialResult.Record.Id, "html");
+var csvReportResult = await reportService.ExportRecordReportAsync(trialResult.Record.Id, "csv");
 
 var instruments = await instrumentRepository.GetAllAsync();
 var calibrations = await calibrationRecordRepository.GetAllAsync();
@@ -129,12 +131,14 @@ Console.WriteLine($"Standard samples: {standards.Count}");
 Console.WriteLine($"Templates: {templates.Count}");
 Console.WriteLine($"Tasks: {tasks.Count}");
 Console.WriteLine($"Measurement records: {records.Count}");
-Console.WriteLine($"Report exports: {exports.Count} / Latest={reportResult.ReportCode}");
+Console.WriteLine($"Report exports: {exports.Count} / Latest={csvReportResult.ReportCode}");
 Console.WriteLine($"Recent operation logs: {logs.Count}");
 Console.WriteLine($"Latest task: {task.TaskCode} / Status={latestTask?.Status}");
 Console.WriteLine($"Standard measurement record: {standardResult.Record.RecordNo} / DeltaE={standardResult.Record.TotalDeltaE}");
 Console.WriteLine($"Trial measurement record: {trialResult.Record.RecordNo} / DeltaE={trialResult.Record.TotalDeltaE}");
-Console.WriteLine($"Report path: {reportResult.FilePath}");
+Console.WriteLine($"Markdown report path: {markdownReportResult.FilePath}");
+Console.WriteLine($"Html report path: {htmlReportResult.FilePath}");
+Console.WriteLine($"Csv report path: {csvReportResult.FilePath}");
 if (latestRecord is not null)
 {
     Console.WriteLine($"Latest record: {latestRecord.Id} / Type={latestRecord.RecordType} / DeltaE={latestRecord.TotalDeltaE} / Effect={latestRecord.TotalEffectDiff}");
@@ -142,3 +146,4 @@ if (latestRecord is not null)
     Console.WriteLine($"Effect results: {effectResults.Count}");
 }
 Console.WriteLine("Database bootstrap, workflow and report verification completed successfully.");
+

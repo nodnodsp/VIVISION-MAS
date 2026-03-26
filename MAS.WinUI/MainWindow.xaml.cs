@@ -585,8 +585,9 @@ public partial class MainWindow : Window
 
         try
         {
-            var result = await _reportService.ExportRecordReportAsync(record.Id);
-            AppendLog($"报告已导出: {result.ReportCode}");
+            var format = GetSelectedReportFormat();
+            var result = await _reportService.ExportRecordReportAsync(record.Id, format);
+            AppendLog($"报告已导出: {result.ReportCode} / {result.FileFormat.ToUpperInvariant()}");
             await RefreshAllDataAsync(record.Id);
         }
         catch (Exception ex)
@@ -1026,7 +1027,8 @@ public partial class MainWindow : Window
         }
 
         var content = File.ReadAllText(export.FilePath);
-        ReportPreviewTextBox.Text = content.Length <= 6000 ? content : content[..6000] + Environment.NewLine + Environment.NewLine + "...（预览已截断）";
+        var previewLength = Math.Max(500, _appSettings.ReportPreviewMaxLength);
+        ReportPreviewTextBox.Text = content.Length <= previewLength ? content : content[..previewLength] + Environment.NewLine + Environment.NewLine + "...（预览已截断）";
     }
 
     private void ClearReportPreview()
@@ -1259,6 +1261,11 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         }
     }
 
+    private string GetSelectedReportFormat()
+    {
+        return (ReportFormatComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()?.Trim().ToLowerInvariant() ?? "md";
+    }
+
     private void SetPassStatus(PassStatus passStatus)
     {
         foreach (var item in RecordPassStatusComboBox.Items.OfType<ComboBoxItem>())
@@ -1361,6 +1368,8 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
 
 
 

@@ -4,5 +4,5 @@ namespace MAS.Application.Abstractions;
 
 public interface IMeasurementReportService
 {
-    Task<MeasurementReportExportResult> ExportRecordReportAsync(string recordId, CancellationToken cancellationToken = default);
+    Task<MeasurementReportExportResult> ExportRecordReportAsync(string recordId, string fileFormat = "md", CancellationToken cancellationToken = default);
 }

@@ -613,6 +613,12 @@
                             <Button Content="导出选中记录" Width="130" Height="40" Margin="0,0,10,0" Background="#F97316" Foreground="White" BorderBrush="#F97316" Click="ExportReportButton_OnClick" />
                             <Button Content="打开导出目录" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="OpenReportFolderButton_OnClick" />
                             <Button Content="打开选中报告" Width="130" Height="40" Margin="0,0,10,0" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="OpenSelectedReportButton_OnClick" />
+                            <TextBlock Text="导出格式" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,8,0" />
+                            <ComboBox x:Name="ReportFormatComboBox" Width="120" SelectedIndex="0" Margin="0,0,10,0">
+                                <ComboBoxItem Content="md" />
+                                <ComboBoxItem Content="html" />
+                                <ComboBoxItem Content="csv" />
+                            </ComboBox>
                             <TextBlock Text="报告编号" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,8,0" />
                             <TextBox x:Name="ReportFilterTextBox" Width="150" Margin="0,0,10,0" />
                             <TextBlock Text="日志模块" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
@@ -773,6 +779,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 
