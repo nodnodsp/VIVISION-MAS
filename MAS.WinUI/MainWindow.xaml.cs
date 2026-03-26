@@ -30,6 +30,9 @@ public partial class MainWindow : Window
     private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
     private readonly MeasurementReportService _reportService;
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
+    private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
+    private IReadOnlyList<StandardSample> _allStandardSamples = Array.Empty<StandardSample>();
+    private IReadOnlyList<ToleranceTemplate> _allTemplates = Array.Empty<ToleranceTemplate>();
     private IReadOnlyList<MeasurementRecord> _allMeasurementRecords = Array.Empty<MeasurementRecord>();
     private IReadOnlyList<ReportExport> _allReportExports = Array.Empty<ReportExport>();
     private IReadOnlyList<OperationLog> _allOperationLogs = Array.Empty<OperationLog>();
@@ -107,6 +110,51 @@ public partial class MainWindow : Window
         {
             SelectInstrument(instrument);
             CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(instrument.Id);
+        }
+    }
+
+    private void ClearSampleInputsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ClearSampleInputs();
+        ClearSampleSummary();
+    }
+
+    private void ClearStandardInputsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ClearStandardInputs();
+        ClearStandardSummary();
+    }
+
+    private void ClearTemplateInputsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ClearTemplateInputs();
+        ClearTemplateSummary();
+    }
+
+    private async void SampleGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SampleGrid.SelectedItem is Sample sample)
+        {
+            ApplySampleToInputs(sample);
+            await LoadSampleSummaryAsync(sample);
+        }
+    }
+
+    private async void StandardSampleGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (StandardSampleGrid.SelectedItem is StandardSample standardSample)
+        {
+            ApplyStandardToInputs(standardSample);
+            await LoadStandardSummaryAsync(standardSample);
+        }
+    }
+
+    private async void TemplateGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TemplateGrid.SelectedItem is ToleranceTemplate template)
+        {
+            ApplyTemplateToInputs(template);
+            await LoadTemplateSummaryAsync(template);
         }
     }
 
@@ -588,18 +636,57 @@ public partial class MainWindow : Window
         var reportExports = await _reportExportRepository.GetAllAsync();
         var operationLogs = await _operationLogRepository.GetRecentAsync(50);
 
+        _allSamples = samples;
+        _allStandardSamples = standards;
+        _allTemplates = templates;
         _allTasks = tasks;
         _allMeasurementRecords = records;
         _allReportExports = reportExports;
         _allOperationLogs = operationLogs;
 
         InstrumentGrid.ItemsSource = instruments;
-        SampleGrid.ItemsSource = samples;
-        StandardSampleGrid.ItemsSource = standards;
-        TemplateGrid.ItemsSource = templates;
+        SampleGrid.ItemsSource = _allSamples;
+        StandardSampleGrid.ItemsSource = _allStandardSamples;
+        TemplateGrid.ItemsSource = _allTemplates;
         TaskGrid.ItemsSource = _allTasks;
         ApplyRecordFilters();
         ApplyReportFilters();
+
+        var selectedSample = _allSamples.FirstOrDefault();
+        SampleGrid.SelectedItem = selectedSample;
+        if (selectedSample is not null)
+        {
+            ApplySampleToInputs(selectedSample);
+            await LoadSampleSummaryAsync(selectedSample);
+        }
+        else
+        {
+            ClearSampleSummary();
+        }
+
+        var selectedStandard = _allStandardSamples.FirstOrDefault();
+        StandardSampleGrid.SelectedItem = selectedStandard;
+        if (selectedStandard is not null)
+        {
+            ApplyStandardToInputs(selectedStandard);
+            await LoadStandardSummaryAsync(selectedStandard);
+        }
+        else
+        {
+            ClearStandardSummary();
+        }
+
+        var selectedTemplate = _allTemplates.FirstOrDefault();
+        TemplateGrid.SelectedItem = selectedTemplate;
+        if (selectedTemplate is not null)
+        {
+            ApplyTemplateToInputs(selectedTemplate);
+            await LoadTemplateSummaryAsync(selectedTemplate);
+        }
+        else
+        {
+            ClearTemplateSummary();
+        }
 
         var selectedInstrument = instruments.FirstOrDefault();
         if (selectedInstrument is not null)
@@ -714,6 +801,83 @@ public partial class MainWindow : Window
         ReportMetaTextBlock.Text = "请选择一条导出记录查看报告内容。";
         ReportPathTextBlock.Text = "-";
         ReportPreviewTextBox.Text = string.Empty;
+    }
+
+    private Task LoadSampleSummaryAsync(Sample sample)
+    {
+        var linkedTasks = _allTasks.Where(x => x.SampleId == sample.Id).ToList();
+        var linkedRecords = _allMeasurementRecords.Where(record => linkedTasks.Any(task => task.Id == record.TaskId)).OrderByDescending(x => x.MeasuredAt).ToList();
+        var latestRecord = linkedRecords.FirstOrDefault();
+
+        SampleSummaryTextBlock.Text = $"试样 {sample.SampleCode} / {sample.SampleName}，材质 {(string.IsNullOrWhiteSpace(sample.MaterialName) ? "未填写" : sample.MaterialName)}，颜色 {(string.IsNullOrWhiteSpace(sample.ColorName) ? "未填写" : sample.ColorName)}，当前状态 {sample.Status}。";
+        SampleUsageTextBlock.Text = $"关联任务 {linkedTasks.Count} 条，关联测量记录 {linkedRecords.Count} 条，最近测量 {(latestRecord is null ? "暂无" : $"{latestRecord.RecordType} / {latestRecord.PassStatus} / {latestRecord.MeasuredAt:yyyy-MM-dd HH:mm:ss}")}";
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadStandardSummaryAsync(StandardSample standardSample)
+    {
+        var linkedTemplate = string.IsNullOrWhiteSpace(standardSample.ToleranceTemplateId) ? null : await _templateRepository.GetByIdAsync(standardSample.ToleranceTemplateId);
+        var linkedTasks = _allTasks.Where(x => x.StandardSampleId == standardSample.Id).ToList();
+        var latestRecord = _allMeasurementRecords.Where(record => linkedTasks.Any(task => task.Id == record.TaskId)).OrderByDescending(x => x.MeasuredAt).FirstOrDefault();
+
+        StandardSummaryTextBlock.Text = $"标准样 {standardSample.StandardCode} / {standardSample.StandardName}，版本 {standardSample.VersionNo}，材质 {(string.IsNullOrWhiteSpace(standardSample.MaterialName) ? "未填写" : standardSample.MaterialName)}，颜色 {(string.IsNullOrWhiteSpace(standardSample.ColorName) ? "未填写" : standardSample.ColorName)}。";
+        StandardUsageTextBlock.Text = $"关联模板 {(linkedTemplate is null ? (standardSample.ToleranceTemplateId ?? "未绑定") : $"{linkedTemplate.TemplateCode} / {linkedTemplate.TemplateName}")}，任务引用 {linkedTasks.Count} 次，最近测量 {(latestRecord is null ? "暂无" : $"{latestRecord.RecordType} / {latestRecord.PassStatus} / ΔE {latestRecord.TotalDeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}")}";
+    }
+
+    private Task LoadTemplateSummaryAsync(ToleranceTemplate template)
+    {
+        var linkedStandards = _allStandardSamples.Where(x => x.ToleranceTemplateId == template.Id).ToList();
+        var linkedTasks = _allTasks.Where(x => x.TemplateId == template.Id).ToList();
+        var latestRecord = _allMeasurementRecords.Where(record => linkedTasks.Any(task => task.Id == record.TaskId)).OrderByDescending(x => x.MeasuredAt).FirstOrDefault();
+
+        TemplateSummaryTextBlock.Text = $"模板 {template.TemplateCode} / {template.TemplateName}，公式 {template.DeltaEFormula}，综合色差上限 {template.OverallUpperLimit?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}，效果差上限 {template.EffectUpperLimit?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}。";
+        TemplateUsageTextBlock.Text = $"默认模板: {(template.IsDefault ? "是" : "否")}，关联标准样 {linkedStandards.Count} 条，关联任务 {linkedTasks.Count} 条，最近测量 {(latestRecord is null ? "暂无" : $"{latestRecord.RecordType} / {latestRecord.PassStatus} / {latestRecord.MeasuredAt:yyyy-MM-dd HH:mm:ss}")}";
+        return Task.CompletedTask;
+    }
+
+    private void ApplySampleToInputs(Sample sample)
+    {
+        SampleCodeTextBox.Text = sample.SampleCode;
+        SampleNameTextBox.Text = sample.SampleName;
+        SampleBatchTextBox.Text = sample.BatchNo ?? string.Empty;
+        SampleMaterialTextBox.Text = sample.MaterialName ?? string.Empty;
+        SampleColorTextBox.Text = sample.ColorName ?? string.Empty;
+    }
+
+    private void ApplyStandardToInputs(StandardSample standardSample)
+    {
+        StandardCodeTextBox.Text = standardSample.StandardCode;
+        StandardNameTextBox.Text = standardSample.StandardName;
+        StandardMaterialTextBox.Text = standardSample.MaterialName ?? string.Empty;
+        StandardColorTextBox.Text = standardSample.ColorName ?? string.Empty;
+        StandardTemplateCodeTextBox.Text = _allTemplates.FirstOrDefault(x => x.Id == standardSample.ToleranceTemplateId)?.TemplateCode ?? string.Empty;
+    }
+
+    private void ApplyTemplateToInputs(ToleranceTemplate template)
+    {
+        TemplateCodeTextBox.Text = template.TemplateCode;
+        TemplateNameTextBox.Text = template.TemplateName;
+        TemplateFormulaTextBox.Text = template.DeltaEFormula;
+        TemplateOverallLimitTextBox.Text = template.OverallUpperLimit?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        TemplateEffectLimitTextBox.Text = template.EffectUpperLimit?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    private void ClearSampleSummary()
+    {
+        SampleSummaryTextBlock.Text = "请选择一条试样查看摘要。";
+        SampleUsageTextBlock.Text = "-";
+    }
+
+    private void ClearStandardSummary()
+    {
+        StandardSummaryTextBlock.Text = "请选择一条标准样查看摘要。";
+        StandardUsageTextBlock.Text = "-";
+    }
+
+    private void ClearTemplateSummary()
+    {
+        TemplateSummaryTextBlock.Text = "请选择一条模板查看摘要。";
+        TemplateUsageTextBlock.Text = "-";
     }
 
     private async Task LoadTaskSummaryAsync(MeasurementTask task)
@@ -894,6 +1058,12 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
+
+
+
 
 
 

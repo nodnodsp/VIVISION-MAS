@@ -215,26 +215,42 @@
                             <TextBox x:Name="SampleMaterialTextBox" />
                             <TextBlock Text="颜色名称" Margin="0,10,0,4" />
                             <TextBox x:Name="SampleColorTextBox" />
-                            <Button Content="保存试样" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveSampleButton_OnClick" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <Button Content="保存试样" Width="140" Height="40" Margin="0,0,10,0" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveSampleButton_OnClick" />
+                                <Button Content="清空表单" Width="100" Height="40" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearSampleInputsButton_OnClick" />
+                            </WrapPanel>
                         </StackPanel>
-                        <DataGrid x:Name="SampleGrid"
-                                  Grid.Column="1"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  Background="#0F172A"
-                                  Foreground="White"
-                                  BorderBrush="#334155"
-                                  HeadersVisibility="Column"
-                                  CanUserAddRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="编号" Binding="{Binding SampleCode}" Width="160" />
-                                <DataGridTextColumn Header="名称" Binding="{Binding SampleName}" Width="180" />
-                                <DataGridTextColumn Header="批次" Binding="{Binding BatchNo}" Width="160" />
-                                <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
-                                <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
-                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <GroupBox Header="试样摘要" Foreground="White" BorderBrush="#334155" Margin="0,0,0,16">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="SampleSummaryTextBlock" Text="请选择一条试样查看摘要。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="SampleUsageTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <DataGrid x:Name="SampleGrid"
+                                      Grid.Row="1"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False"
+                                      SelectionChanged="SampleGrid_OnSelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="编号" Binding="{Binding SampleCode}" Width="160" />
+                                    <DataGridTextColumn Header="名称" Binding="{Binding SampleName}" Width="180" />
+                                    <DataGridTextColumn Header="批次" Binding="{Binding BatchNo}" Width="160" />
+                                    <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
+                                    <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
+                                    <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
                     </Grid>
                 </TabItem>
 
@@ -256,26 +272,42 @@
                             <TextBox x:Name="StandardColorTextBox" />
                             <TextBlock Text="模板编号" Margin="0,10,0,4" />
                             <TextBox x:Name="StandardTemplateCodeTextBox" Text="TPL-DEFAULT" />
-                            <Button Content="保存标准样" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveStandardSampleButton_OnClick" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <Button Content="保存标准样" Width="140" Height="40" Margin="0,0,10,0" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveStandardSampleButton_OnClick" />
+                                <Button Content="清空表单" Width="100" Height="40" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearStandardInputsButton_OnClick" />
+                            </WrapPanel>
                         </StackPanel>
-                        <DataGrid x:Name="StandardSampleGrid"
-                                  Grid.Column="1"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  Background="#0F172A"
-                                  Foreground="White"
-                                  BorderBrush="#334155"
-                                  HeadersVisibility="Column"
-                                  CanUserAddRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="编号" Binding="{Binding StandardCode}" Width="160" />
-                                <DataGridTextColumn Header="名称" Binding="{Binding StandardName}" Width="180" />
-                                <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
-                                <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
-                                <DataGridTextColumn Header="版本" Binding="{Binding VersionNo}" Width="80" />
-                                <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsActive}" Width="80" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <GroupBox Header="标准样摘要" Foreground="White" BorderBrush="#334155" Margin="0,0,0,16">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="StandardSummaryTextBlock" Text="请选择一条标准样查看摘要。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="StandardUsageTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <DataGrid x:Name="StandardSampleGrid"
+                                      Grid.Row="1"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False"
+                                      SelectionChanged="StandardSampleGrid_OnSelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="编号" Binding="{Binding StandardCode}" Width="160" />
+                                    <DataGridTextColumn Header="名称" Binding="{Binding StandardName}" Width="180" />
+                                    <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
+                                    <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
+                                    <DataGridTextColumn Header="版本" Binding="{Binding VersionNo}" Width="80" />
+                                    <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsActive}" Width="80" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
                     </Grid>
                 </TabItem>
 
@@ -297,26 +329,42 @@
                             <TextBox x:Name="TemplateOverallLimitTextBox" Text="1.0" />
                             <TextBlock Text="效果差上限" Margin="0,10,0,4" />
                             <TextBox x:Name="TemplateEffectLimitTextBox" Text="1.0" />
-                            <Button Content="保存模板" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveTemplateButton_OnClick" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <Button Content="保存模板" Width="140" Height="40" Margin="0,0,10,0" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveTemplateButton_OnClick" />
+                                <Button Content="清空表单" Width="100" Height="40" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearTemplateInputsButton_OnClick" />
+                            </WrapPanel>
                         </StackPanel>
-                        <DataGrid x:Name="TemplateGrid"
-                                  Grid.Column="1"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  Background="#0F172A"
-                                  Foreground="White"
-                                  BorderBrush="#334155"
-                                  HeadersVisibility="Column"
-                                  CanUserAddRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="编号" Binding="{Binding TemplateCode}" Width="160" />
-                                <DataGridTextColumn Header="名称" Binding="{Binding TemplateName}" Width="180" />
-                                <DataGridTextColumn Header="公式" Binding="{Binding DeltaEFormula}" Width="100" />
-                                <DataGridTextColumn Header="综合色差上限" Binding="{Binding OverallUpperLimit}" Width="120" />
-                                <DataGridTextColumn Header="效果上限" Binding="{Binding EffectUpperLimit}" Width="120" />
-                                <DataGridCheckBoxColumn Header="默认" Binding="{Binding IsDefault}" Width="80" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <GroupBox Header="模板摘要" Foreground="White" BorderBrush="#334155" Margin="0,0,0,16">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="TemplateSummaryTextBlock" Text="请选择一条模板查看摘要。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="TemplateUsageTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <DataGrid x:Name="TemplateGrid"
+                                      Grid.Row="1"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False"
+                                      SelectionChanged="TemplateGrid_OnSelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="编号" Binding="{Binding TemplateCode}" Width="160" />
+                                    <DataGridTextColumn Header="名称" Binding="{Binding TemplateName}" Width="180" />
+                                    <DataGridTextColumn Header="公式" Binding="{Binding DeltaEFormula}" Width="100" />
+                                    <DataGridTextColumn Header="综合色差上限" Binding="{Binding OverallUpperLimit}" Width="120" />
+                                    <DataGridTextColumn Header="效果上限" Binding="{Binding EffectUpperLimit}" Width="120" />
+                                    <DataGridCheckBoxColumn Header="默认" Binding="{Binding IsDefault}" Width="80" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
                     </Grid>
                 </TabItem>
 
@@ -636,6 +684,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 
