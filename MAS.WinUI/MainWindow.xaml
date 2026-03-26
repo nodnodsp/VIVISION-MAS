@@ -326,9 +326,11 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="说明：选中样品、标准样、模板中的任意记录后，点击顶部“生成任务草稿”即可写入任务表。" Foreground="#CBD5E1" TextWrapping="Wrap" />
-                        </StackPanel>
+                        <WrapPanel Margin="0,0,0,12">
+                            <Button Content="新建任务草稿" Width="130" Height="40" Margin="0,0,10,0" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="CreateDraftTaskButton_OnClick" />
+                            <Button Content="刷新任务列表" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="RefreshDataButton_OnClick" />
+                            <TextBlock Text="用于查看当前测量任务、状态流转和绑定信息。" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,0,0" />
+                        </WrapPanel>
                         <DataGrid x:Name="TaskGrid"
                                   Grid.Row="1"
                                   AutoGenerateColumns="False"
@@ -417,11 +419,26 @@
 
                         <Grid Grid.Column="1">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="2*" />
                                 <RowDefinition Height="1.2*" />
                             </Grid.RowDefinitions>
 
+                            <WrapPanel Margin="0,0,0,12">
+                                <TextBlock Text="任务编号" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBox x:Name="RecordFilterTaskCodeTextBox" Width="140" Margin="0,0,10,0" />
+                                <TextBlock Text="记录类型" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox x:Name="RecordFilterTypeComboBox" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                                    <ComboBoxItem Content="全部" />
+                                    <ComboBoxItem Content="standard" />
+                                    <ComboBoxItem Content="trial" />
+                                </ComboBox>
+                                <Button Content="筛选记录" Width="90" Height="34" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ApplyRecordFilterButton_OnClick" />
+                                <Button Content="清空" Width="70" Height="34" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearRecordFilterButton_OnClick" />
+                            </WrapPanel>
+
                             <DataGrid x:Name="MeasurementRecordGrid"
+                                      Grid.Row="1"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       Background="#0F172A"
@@ -442,7 +459,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <Grid Grid.Row="1" Margin="0,18,0,0">
+                            <Grid Grid.Row="2" Margin="0,18,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
@@ -493,14 +510,20 @@
                     <Grid Margin="18">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="1.2*" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="1.15*" />
+                            <RowDefinition Height="1.05*" />
                         </Grid.RowDefinitions>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <WrapPanel Margin="0,0,0,12">
                             <Button Content="导出选中记录" Width="130" Height="40" Margin="0,0,10,0" Background="#F97316" Foreground="White" BorderBrush="#F97316" Click="ExportReportButton_OnClick" />
                             <Button Content="打开导出目录" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="OpenReportFolderButton_OnClick" />
-                            <TextBlock Text="说明：选中测量记录后可导出 Markdown 报告，导出记录与关键操作日志会在下方显示。" Foreground="#CBD5E1" VerticalAlignment="Center" TextWrapping="Wrap" />
-                        </StackPanel>
+                            <Button Content="打开选中报告" Width="130" Height="40" Margin="0,0,10,0" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="OpenSelectedReportButton_OnClick" />
+                            <TextBlock Text="报告编号" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,8,0" />
+                            <TextBox x:Name="ReportFilterTextBox" Width="150" Margin="0,0,10,0" />
+                            <TextBlock Text="日志模块" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox x:Name="OperationLogFilterTextBox" Width="120" Margin="0,0,10,0" />
+                            <Button Content="筛选" Width="70" Height="34" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ApplyReportFilterButton_OnClick" />
+                            <Button Content="清空" Width="70" Height="34" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearReportFilterButton_OnClick" />
+                        </WrapPanel>
                         <DataGrid x:Name="ReportExportGrid"
                                   Grid.Row="1"
                                   AutoGenerateColumns="False"
@@ -509,7 +532,8 @@
                                   Foreground="White"
                                   BorderBrush="#334155"
                                   HeadersVisibility="Column"
-                                  CanUserAddRows="False">
+                                  CanUserAddRows="False"
+                                  SelectionChanged="ReportExportGrid_OnSelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="报告编号" Binding="{Binding ReportCode}" Width="180" />
                                 <DataGridTextColumn Header="记录ID" Binding="{Binding RecordId}" Width="220" />
@@ -519,26 +543,50 @@
                                 <DataGridTextColumn Header="状态" Binding="{Binding ExportStatus}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <DataGrid x:Name="OperationLogGrid"
-                                  Grid.Row="2"
-                                  Margin="0,18,0,0"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  Background="#0F172A"
-                                  Foreground="White"
-                                  BorderBrush="#334155"
-                                  HeadersVisibility="Column"
-                                  CanUserAddRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="100" />
-                                <DataGridTextColumn Header="操作" Binding="{Binding OperationType}" Width="100" />
-                                <DataGridTextColumn Header="描述" Binding="{Binding OperationDesc}" Width="360" />
-                                <DataGridTextColumn Header="结果" Binding="{Binding OperationResult}" Width="100" />
-                                <DataGridTextColumn Header="任务ID" Binding="{Binding TaskId}" Width="220" />
-                                <DataGridTextColumn Header="记录ID" Binding="{Binding RecordId}" Width="220" />
-                                <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid Grid.Row="2" Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="0.95*" />
+                            </Grid.ColumnDefinitions>
+                            <GroupBox Header="操作日志" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
+                                <DataGrid x:Name="OperationLogGrid"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          Background="#0F172A"
+                                          Foreground="White"
+                                          BorderBrush="#334155"
+                                          HeadersVisibility="Column"
+                                          CanUserAddRows="False">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="100" />
+                                        <DataGridTextColumn Header="操作" Binding="{Binding OperationType}" Width="100" />
+                                        <DataGridTextColumn Header="描述" Binding="{Binding OperationDesc}" Width="320" />
+                                        <DataGridTextColumn Header="结果" Binding="{Binding OperationResult}" Width="100" />
+                                        <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </GroupBox>
+                            <GroupBox Grid.Column="1" Header="报告预览" Margin="9,0,0,0" Foreground="White" BorderBrush="#334155">
+                                <Grid Margin="12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="ReportMetaTextBlock" Text="请选择一条导出记录查看报告内容。" Foreground="#CBD5E1" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="ReportPathTextBlock" Grid.Row="1" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                    <TextBox x:Name="ReportPreviewTextBox"
+                                             Grid.Row="2"
+                                             Background="#020617"
+                                             Foreground="#E2E8F0"
+                                             BorderBrush="#1E293B"
+                                             IsReadOnly="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             AcceptsReturn="True" />
+                                </Grid>
+                            </GroupBox>
+                        </Grid>
                     </Grid>
                 </TabItem>
             </TabControl>
@@ -568,6 +616,13 @@
         </Border>
     </Grid>
 </Window>
+
+
+
+
+
+
+
 
 
 

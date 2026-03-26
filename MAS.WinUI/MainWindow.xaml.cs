@@ -29,6 +29,10 @@ public partial class MainWindow : Window
     private readonly MeasurementWorkflowService _workflowService;
     private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
     private readonly MeasurementReportService _reportService;
+    private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
+    private IReadOnlyList<MeasurementRecord> _allMeasurementRecords = Array.Empty<MeasurementRecord>();
+    private IReadOnlyList<ReportExport> _allReportExports = Array.Empty<ReportExport>();
+    private IReadOnlyList<OperationLog> _allOperationLogs = Array.Empty<OperationLog>();
 
     public MainWindow()
     {
@@ -352,6 +356,30 @@ public partial class MainWindow : Window
         await RefreshAllDataAsync(record.Id);
     }
 
+    private void ApplyRecordFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ApplyRecordFilters();
+    }
+
+    private void ClearRecordFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        RecordFilterTaskCodeTextBox.Clear();
+        RecordFilterTypeComboBox.SelectedIndex = 0;
+        ApplyRecordFilters();
+    }
+
+    private void ApplyReportFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ApplyReportFilters();
+    }
+
+    private void ClearReportFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ReportFilterTextBox.Clear();
+        OperationLogFilterTextBox.Clear();
+        ApplyReportFilters();
+    }
+
     private async void ExportReportButton_OnClick(object sender, RoutedEventArgs e)
     {
         await EnsureDatabaseReadyAsync();
@@ -375,6 +403,30 @@ public partial class MainWindow : Window
             await WriteOperationLogAsync("report", "export", "failed", ex.Message, recordId: record.Id);
             MessageBox.Show(this, ex.Message, "导出报告", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void OpenSelectedReportButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (ReportExportGrid.SelectedItem is not ReportExport export || string.IsNullOrWhiteSpace(export.FilePath) || !File.Exists(export.FilePath))
+            {
+                MessageBox.Show(this, "请先选择一条已导出的有效报告。", "打开报告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo { FileName = export.FilePath, UseShellExecute = true });
+            AppendLog($"已打开报告文件: {export.ReportCode}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"打开报告文件失败: {ex.Message}");
+        }
+    }
+
+    private void ReportExportGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        LoadReportPreview(ReportExportGrid.SelectedItem as ReportExport);
     }
 
     private void OpenReportFolderButton_OnClick(object sender, RoutedEventArgs e)
@@ -524,6 +576,8 @@ public partial class MainWindow : Window
 
     private async Task RefreshAllDataAsync(string? selectedRecordId = null)
     {
+        var selectedReportId = (ReportExportGrid.SelectedItem as ReportExport)?.Id;
+
         var instruments = await _instrumentRepository.GetAllAsync();
         var calibrationRecords = await _calibrationRecordRepository.GetAllAsync();
         var samples = await _sampleRepository.GetAllAsync();
@@ -534,14 +588,18 @@ public partial class MainWindow : Window
         var reportExports = await _reportExportRepository.GetAllAsync();
         var operationLogs = await _operationLogRepository.GetRecentAsync(50);
 
+        _allTasks = tasks;
+        _allMeasurementRecords = records;
+        _allReportExports = reportExports;
+        _allOperationLogs = operationLogs;
+
         InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = samples;
         StandardSampleGrid.ItemsSource = standards;
         TemplateGrid.ItemsSource = templates;
-        TaskGrid.ItemsSource = tasks;
-        MeasurementRecordGrid.ItemsSource = records;
-        ReportExportGrid.ItemsSource = reportExports;
-        OperationLogGrid.ItemsSource = operationLogs;
+        TaskGrid.ItemsSource = _allTasks;
+        ApplyRecordFilters();
+        ApplyReportFilters();
 
         var selectedInstrument = instruments.FirstOrDefault();
         if (selectedInstrument is not null)
@@ -570,12 +628,74 @@ public partial class MainWindow : Window
             AngleResultGrid.ItemsSource = Array.Empty<MeasurementAngleResult>();
             EffectResultGrid.ItemsSource = Array.Empty<MeasurementEffectResult>();
         }
+
+        var selectedReport = selectedReportId is null
+            ? reportExports.OrderByDescending(x => x.ExportedAt).FirstOrDefault()
+            : reportExports.FirstOrDefault(x => x.Id == selectedReportId) ?? reportExports.OrderByDescending(x => x.ExportedAt).FirstOrDefault();
+
+        ReportExportGrid.SelectedItem = selectedReport;
+        LoadReportPreview(selectedReport);
+    }
+
+    private void ApplyRecordFilters()
+    {
+        var taskCodeFilter = RecordFilterTaskCodeTextBox?.Text?.Trim();
+        var recordTypeFilter = (RecordFilterTypeComboBox?.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+        var filtered = _allMeasurementRecords.Where(record =>
+        {
+            var matchesTask = string.IsNullOrWhiteSpace(taskCodeFilter) || _allTasks.Any(task => task.Id == record.TaskId && task.TaskCode.Contains(taskCodeFilter, StringComparison.OrdinalIgnoreCase));
+            var matchesType = string.IsNullOrWhiteSpace(recordTypeFilter) || recordTypeFilter == "全部" || string.Equals(record.RecordType, recordTypeFilter, StringComparison.OrdinalIgnoreCase);
+            return matchesTask && matchesType;
+        }).ToList();
+
+        MeasurementRecordGrid.ItemsSource = filtered;
+    }
+
+    private void ApplyReportFilters()
+    {
+        var reportFilter = ReportFilterTextBox?.Text?.Trim();
+        var moduleFilter = OperationLogFilterTextBox?.Text?.Trim();
+
+        ReportExportGrid.ItemsSource = _allReportExports.Where(export =>
+            string.IsNullOrWhiteSpace(reportFilter) || export.ReportCode.Contains(reportFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        OperationLogGrid.ItemsSource = _allOperationLogs.Where(log =>
+            string.IsNullOrWhiteSpace(moduleFilter) || log.ModuleName.Contains(moduleFilter, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     private async Task LoadMeasurementDetailsAsync(string recordId)
     {
         AngleResultGrid.ItemsSource = await _angleResultRepository.GetByRecordIdAsync(recordId);
         EffectResultGrid.ItemsSource = await _effectResultRepository.GetByRecordIdAsync(recordId);
+    }
+
+    private void LoadReportPreview(ReportExport? export)
+    {
+        if (export is null)
+        {
+            ClearReportPreview();
+            return;
+        }
+
+        ReportMetaTextBlock.Text = $"报告编号: {export.ReportCode} | 格式: {export.FileFormat} | 状态: {export.ExportStatus} | 时间: {export.ExportedAt:yyyy-MM-dd HH:mm:ss}";
+        ReportPathTextBlock.Text = string.IsNullOrWhiteSpace(export.FilePath) ? "-" : export.FilePath;
+
+        if (string.IsNullOrWhiteSpace(export.FilePath) || !File.Exists(export.FilePath))
+        {
+            ReportPreviewTextBox.Text = "报告文件不存在，可能已被移动或删除。";
+            return;
+        }
+
+        var content = File.ReadAllText(export.FilePath);
+        ReportPreviewTextBox.Text = content.Length <= 6000 ? content : content[..6000] + Environment.NewLine + Environment.NewLine + "...（预览已截断）";
+    }
+
+    private void ClearReportPreview()
+    {
+        ReportMetaTextBlock.Text = "请选择一条导出记录查看报告内容。";
+        ReportPathTextBlock.Text = "-";
+        ReportPreviewTextBox.Text = string.Empty;
     }
 
     private void SelectInstrument(Instrument instrument)
@@ -718,3 +838,5 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
+
+
