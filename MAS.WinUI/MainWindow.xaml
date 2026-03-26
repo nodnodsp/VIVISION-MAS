@@ -685,6 +685,62 @@
                         </Grid>
                     </Grid>
                 </TabItem>
+                <TabItem Header="系统设置">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="360" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="系统设置" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <TextBlock Text="默认任务类型" Margin="0,6,0,4" />
+                            <ComboBox x:Name="SettingsTaskTypeComboBox" SelectedIndex="0">
+                                <ComboBoxItem Content="trial" />
+                                <ComboBoxItem Content="standard" />
+                            </ComboBox>
+                            <TextBlock Text="默认测量模式" Margin="0,10,0,4" />
+                            <ComboBox x:Name="SettingsMeasurementModeComboBox" SelectedIndex="0">
+                                <ComboBoxItem Content="Single" />
+                                <ComboBoxItem Content="Average" />
+                                <ComboBoxItem Content="Continuous" />
+                            </ComboBox>
+                            <TextBlock Text="默认平均次数" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsAverageCountTextBox" Text="1" />
+                            <TextBlock Text="默认测量间隔（秒）" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsIntervalSecondsTextBox" Text="5" />
+                            <TextBlock Text="默认模板编号" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsTemplateCodeTextBox" Text="TPL-DEFAULT" />
+                            <TextBlock Text="报告预览最大字符数" Margin="0,10,0,4" />
+                            <TextBox x:Name="SettingsPreviewLengthTextBox" Text="6000" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <Button Content="保存设置" Width="120" Height="40" Margin="0,0,10,0" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveSettingsButton_OnClick" />
+                                <Button Content="重新加载" Width="120" Height="40" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ReloadSettingsButton_OnClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <GroupBox Header="设置摘要" Foreground="White" BorderBrush="#334155" Margin="0,0,0,16">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="SettingsSummaryTextBlock" Text="当前尚未加载系统设置。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="SettingsImpactTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Grid.Row="1" Header="配置文件" Foreground="White" BorderBrush="#334155" Margin="0,0,0,16">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="SettingsPathTextBlock" Text="-" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="SettingsUpdatedAtTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Grid.Row="2" Header="生效说明" Foreground="White" BorderBrush="#334155">
+                                <TextBlock Margin="12" TextWrapping="Wrap" Foreground="#CBD5E1" Text="默认任务类型、测量模式、平均次数、测量间隔会应用到新建任务草稿。默认模板编号会作为标准样录入和任务草稿的默认模板。报告预览长度会影响报告中心右侧的预览截断长度。" />
+                            </GroupBox>
+                        </Grid>
+                    </Grid>
+                </TabItem>
             </TabControl>
 
             <Border Grid.Row="3" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
@@ -712,6 +768,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 

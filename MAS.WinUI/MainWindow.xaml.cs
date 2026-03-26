@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using MAS.Application.Services;
 using MAS.Core.Entities;
 using MAS.Core.Enums;
+using MAS.Infrastructure.Configuration;
 using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Repositories;
 
@@ -29,6 +30,8 @@ public partial class MainWindow : Window
     private readonly MeasurementWorkflowService _workflowService;
     private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
     private readonly MeasurementReportService _reportService;
+    private readonly AppSettingsStore _appSettingsStore = new();
+    private AppSettings _appSettings = new();
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
     private IReadOnlyList<StandardSample> _allStandardSamples = Array.Empty<StandardSample>();
@@ -63,12 +66,14 @@ public partial class MainWindow : Window
 
         InitializeComponent();
         DatabasePathText.Text = _bootstrapper.DatabasePath;
+        SettingsPathTextBlock.Text = _appSettingsStore.SettingsPath;
         AppendLog("应用已启动。准备加载数据库状态。");
     }
 
     private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         await EnsureDatabaseReadyAsync();
+        await LoadSettingsAsync();
         await RefreshAllDataAsync();
     }
 
@@ -82,6 +87,27 @@ public partial class MainWindow : Window
     {
         await RefreshAllDataAsync();
         AppendLog("主数据、报告与日志已刷新。");
+    }
+
+    private async void SaveSettingsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!TryReadSettingsFromInputs(out var settings))
+        {
+            MessageBox.Show(this, "系统设置中的数值项格式不正确。", "系统设置", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _appSettings = settings;
+        await _appSettingsStore.SaveAsync(_appSettings);
+        ApplySettingsToInputs();
+        UpdateSettingsSummary();
+        AppendLog("系统设置已保存。");
+    }
+
+    private async void ReloadSettingsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await LoadSettingsAsync();
+        AppendLog("系统设置已重新加载。");
     }
 
     private async void ConnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
@@ -622,6 +648,68 @@ public partial class MainWindow : Window
         return latestTask?.TaskCode;
     }
 
+    private async Task LoadSettingsAsync()
+    {
+        _appSettings = await _appSettingsStore.LoadAsync();
+        ApplySettingsToInputs();
+        UpdateSettingsSummary();
+    }
+
+    private void ApplySettingsToInputs()
+    {
+        SelectComboItemByText(SettingsTaskTypeComboBox, _appSettings.DefaultTaskType);
+        SelectComboItemByText(SettingsMeasurementModeComboBox, _appSettings.DefaultMeasurementMode);
+        SettingsAverageCountTextBox.Text = _appSettings.DefaultAverageCount.ToString(CultureInfo.InvariantCulture);
+        SettingsIntervalSecondsTextBox.Text = _appSettings.DefaultIntervalSeconds.ToString(CultureInfo.InvariantCulture);
+        SettingsTemplateCodeTextBox.Text = _appSettings.DefaultTemplateCode;
+        SettingsPreviewLengthTextBox.Text = _appSettings.ReportPreviewMaxLength.ToString(CultureInfo.InvariantCulture);
+
+        if (string.IsNullOrWhiteSpace(StandardTemplateCodeTextBox.Text) || StandardTemplateCodeTextBox.Text == "TPL-DEFAULT")
+        {
+            StandardTemplateCodeTextBox.Text = _appSettings.DefaultTemplateCode;
+        }
+
+        if (string.IsNullOrWhiteSpace(RecordTypeTextBox.Text) || RecordTypeTextBox.Text == "trial" || RecordTypeTextBox.Text == "standard")
+        {
+            RecordTypeTextBox.Text = _appSettings.DefaultTaskType;
+        }
+    }
+
+    private bool TryReadSettingsFromInputs(out AppSettings settings)
+    {
+        settings = new AppSettings();
+
+        if (!int.TryParse(SettingsAverageCountTextBox.Text, out var averageCount) || averageCount <= 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(SettingsIntervalSecondsTextBox.Text, out var intervalSeconds) || intervalSeconds <= 0)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(SettingsPreviewLengthTextBox.Text, out var previewLength) || previewLength < 500)
+        {
+            return false;
+        }
+
+        settings.DefaultTaskType = (SettingsTaskTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "trial";
+        settings.DefaultMeasurementMode = (SettingsMeasurementModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Single";
+        settings.DefaultAverageCount = averageCount;
+        settings.DefaultIntervalSeconds = intervalSeconds;
+        settings.DefaultTemplateCode = string.IsNullOrWhiteSpace(SettingsTemplateCodeTextBox.Text) ? "TPL-DEFAULT" : SettingsTemplateCodeTextBox.Text.Trim();
+        settings.ReportPreviewMaxLength = previewLength;
+        return true;
+    }
+
+    private void UpdateSettingsSummary()
+    {
+        SettingsPathTextBlock.Text = _appSettingsStore.SettingsPath;
+        SettingsUpdatedAtTextBlock.Text = $"最后更新时间: {_appSettings.UpdatedAt:yyyy-MM-dd HH:mm:ss}";
+        SettingsSummaryTextBlock.Text = $"默认任务类型 {_appSettings.DefaultTaskType}，默认测量模式 {_appSettings.DefaultMeasurementMode}，平均次数 {_appSettings.DefaultAverageCount}，间隔 {_appSettings.DefaultIntervalSeconds}s。";
+        SettingsImpactTextBlock.Text = $"默认模板 {_appSettings.DefaultTemplateCode}，报告预览最大字符数 {_appSettings.ReportPreviewMaxLength}。新建任务、标准样模板默认值和报告预览会使用这些设置。";
+    }
     private async Task EnsureDatabaseReadyAsync(bool forceLog = false)
     {
         await _bootstrapper.EnsureCreatedAsync();
@@ -1052,6 +1140,19 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         RecordGraininessDiffTextBox.Text = effect?.GraininessDiff?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
+    private static void SelectComboItemByText(ComboBox comboBox, string? text)
+    {
+        var target = text?.Trim();
+        foreach (var item in comboBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Content?.ToString(), target, StringComparison.OrdinalIgnoreCase))
+            {
+                comboBox.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
     private void SetPassStatus(PassStatus passStatus)
     {
         foreach (var item in RecordPassStatusComboBox.Items.OfType<ComboBoxItem>())
@@ -1154,6 +1255,10 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
+
 
 
 
