@@ -9,6 +9,7 @@ using MAS.Core.Entities;
 using MAS.Core.Enums;
 using MAS.Infrastructure.Configuration;
 using MAS.Infrastructure.Database;
+using MAS.Infrastructure.Operations;
 using MAS.Infrastructure.Repositories;
 
 namespace MAS.WinUI;
@@ -32,6 +33,7 @@ public partial class MainWindow : Window
     private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
     private readonly MeasurementReportService _reportService;
     private readonly AppSettingsStore _appSettingsStore = new();
+    private readonly DataMaintenanceService _dataMaintenanceService = new();
     private AppSettings _appSettings = new();
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
@@ -116,24 +118,37 @@ public partial class MainWindow : Window
         await EnsureDatabaseReadyAsync();
         try
         {
-            var backupFolder = GetBackupFolderPath();
-            Directory.CreateDirectory(backupFolder);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            var databaseBackupPath = Path.Combine(backupFolder, $"MASQC_backup_{timestamp}.db");
-            var settingsBackupPath = Path.Combine(backupFolder, $"appsettings_backup_{timestamp}.json");
-
-            File.Copy(_bootstrapper.DatabasePath, databaseBackupPath, overwrite: true);
-            if (File.Exists(_appSettingsStore.SettingsPath))
-            {
-                File.Copy(_appSettingsStore.SettingsPath, settingsBackupPath, overwrite: true);
-            }
-
-            AppendLog($"数据备份已生成: {databaseBackupPath}");
-            MessageBox.Show(this, $"数据备份完成。\n{databaseBackupPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
+            var backup = await _dataMaintenanceService.BackupAsync(_bootstrapper.DatabasePath, _appSettingsStore.SettingsPath);
+            UpdateSettingsSummary();
+            AppendLog($"数据备份已生成: {backup.DatabaseBackupPath}");
+            MessageBox.Show(this, $"数据备份完成。\n{backup.DatabaseBackupPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
             AppendLog($"数据备份失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void RestoreLatestBackupButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await EnsureDatabaseReadyAsync();
+        if (MessageBox.Show(this, "恢复最近备份会覆盖当前数据库和设置文件，是否继续？", "系统设置", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            var restore = await _dataMaintenanceService.RestoreLatestBackupAsync(_bootstrapper.DatabasePath, _appSettingsStore.SettingsPath);
+            await LoadSettingsAsync();
+            await RefreshAllDataAsync();
+            AppendLog($"已恢复最近备份，恢复前安全备份: {restore.SafetyBackupPath}");
+            MessageBox.Show(this, $"恢复完成。\n数据库: {restore.RestoredDatabasePath}\n恢复前安全备份: {restore.SafetyBackupPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"恢复最近备份失败: {ex.Message}");
             MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -143,49 +158,26 @@ public partial class MainWindow : Window
         await EnsureDatabaseReadyAsync();
         try
         {
-            var diagnosticsFolder = GetDiagnosticsFolderPath();
-            Directory.CreateDirectory(diagnosticsFolder);
-            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            var tempFolder = Path.Combine(diagnosticsFolder, $"diagnostics_{timestamp}");
-            Directory.CreateDirectory(tempFolder);
-
-            var summaryPath = Path.Combine(tempFolder, "summary.txt");
-            var summaryLines = new[]
+            var summary = new Dictionary<string, string>
             {
-                "MAS V1 Diagnostics",
-                $"GeneratedAt: {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-                $"DatabasePath: {_bootstrapper.DatabasePath}",
-                $"SettingsPath: {_appSettingsStore.SettingsPath}",
-                $"TaskCount: {_allTasks.Count}",
-                $"RecordCount: {_allMeasurementRecords.Count}",
-                $"ReportCount: {_allReportExports.Count}",
-                $"LogCount: {_allOperationLogs.Count}",
+                ["GeneratedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                ["DatabasePath"] = _bootstrapper.DatabasePath,
+                ["SettingsPath"] = _appSettingsStore.SettingsPath,
+                ["TaskCount"] = _allTasks.Count.ToString(CultureInfo.InvariantCulture),
+                ["RecordCount"] = _allMeasurementRecords.Count.ToString(CultureInfo.InvariantCulture),
+                ["ReportCount"] = _allReportExports.Count.ToString(CultureInfo.InvariantCulture),
+                ["LogCount"] = _allOperationLogs.Count.ToString(CultureInfo.InvariantCulture),
             };
-            File.WriteAllLines(summaryPath, summaryLines);
 
-            if (File.Exists(_bootstrapper.DatabasePath))
-            {
-                File.Copy(_bootstrapper.DatabasePath, Path.Combine(tempFolder, "MASQC.db"), overwrite: true);
-            }
+            var diagnostics = await _dataMaintenanceService.ExportDiagnosticsAsync(
+                _bootstrapper.DatabasePath,
+                _appSettingsStore.SettingsPath,
+                LogTextBox.Text,
+                summary);
 
-            if (File.Exists(_appSettingsStore.SettingsPath))
-            {
-                File.Copy(_appSettingsStore.SettingsPath, Path.Combine(tempFolder, "appsettings.json"), overwrite: true);
-            }
-
-            File.WriteAllText(Path.Combine(tempFolder, "runtime-log.txt"), LogTextBox.Text);
-
-            var zipPath = Path.Combine(diagnosticsFolder, $"MAS_diagnostics_{timestamp}.zip");
-            if (File.Exists(zipPath))
-            {
-                File.Delete(zipPath);
-            }
-
-            ZipFile.CreateFromDirectory(tempFolder, zipPath);
-            Directory.Delete(tempFolder, recursive: true);
-
-            AppendLog($"诊断包已导出: {zipPath}");
-            MessageBox.Show(this, $"诊断包导出完成。\n{zipPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
+            UpdateSettingsSummary();
+            AppendLog($"诊断包已导出: {diagnostics.PackagePath}");
+            MessageBox.Show(this, $"诊断包导出完成。\n{diagnostics.PackagePath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -194,14 +186,28 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OpenBackupFolderButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(_dataMaintenanceService.BackupFolderPath);
+            Process.Start(new ProcessStartInfo { FileName = _dataMaintenanceService.BackupFolderPath, UseShellExecute = true });
+            AppendLog($"已打开备份目录: {_dataMaintenanceService.BackupFolderPath}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"打开备份目录失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void OpenDataFolderButton_OnClick(object sender, RoutedEventArgs e)
     {
         try
         {
-            var folder = GetDataFolderPath();
-            Directory.CreateDirectory(folder);
-            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
-            AppendLog($"已打开数据目录: {folder}");
+            Directory.CreateDirectory(_dataMaintenanceService.DataFolderPath);
+            Process.Start(new ProcessStartInfo { FileName = _dataMaintenanceService.DataFolderPath, UseShellExecute = true });
+            AppendLog($"已打开数据目录: {_dataMaintenanceService.DataFolderPath}");
         }
         catch (Exception ex)
         {
@@ -1280,22 +1286,8 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
             CreatedAt = DateTime.UtcNow,
         });
     }
-
-    private static string GetDataFolderPath()
-    {
-        return Path.Combine(AppContext.BaseDirectory, "Data");
-    }
-
-    private static string GetBackupFolderPath()
-    {
-        return Path.Combine(AppContext.BaseDirectory, "Exports", "Backups");
-    }
-
-    private static string GetDiagnosticsFolderPath()
-    {
-        return Path.Combine(AppContext.BaseDirectory, "Exports", "Diagnostics");
-    }
     private static string GetReportFolderPath()
+
     {
         return Path.Combine(AppContext.BaseDirectory, "Exports", "Reports");
     }
@@ -1369,6 +1361,9 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
 
 
 
