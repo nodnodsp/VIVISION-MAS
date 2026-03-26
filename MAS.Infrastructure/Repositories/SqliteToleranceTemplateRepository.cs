@@ -32,6 +32,18 @@ VALUES ($id, $template_code, $template_name, $product_type, $delta_e_formula, $o
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<ToleranceTemplate?> GetByIdAsync(string templateId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = SqliteConnectionFactory.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT id, template_code, template_name, delta_e_formula, overall_upper_limit, effect_upper_limit, is_default, status, created_at, updated_at
+FROM tolerance_templates WHERE id = $id LIMIT 1;";
+        command.Parameters.AddWithValue("$id", templateId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+    }
+
     public async Task<ToleranceTemplate?> GetByCodeAsync(string templateCode, CancellationToken cancellationToken = default)
     {
         await using var connection = SqliteConnectionFactory.Create();

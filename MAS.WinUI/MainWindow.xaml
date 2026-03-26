@@ -112,6 +112,7 @@
                             <Button Content="生成任务草稿" Width="148" Height="44" Margin="0,0,12,12" Background="#0EA5E9" Foreground="White" BorderBrush="#0EA5E9" Click="CreateDraftTaskButton_OnClick" />
                             <Button Content="标准样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#22C55E" Foreground="White" BorderBrush="#22C55E" Click="ExecuteStandardMeasurementButton_OnClick" />
                             <Button Content="试样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="ExecuteTrialMeasurementButton_OnClick" />
+                            <Button Content="导出报告" Width="148" Height="44" Margin="0,0,12,12" Background="#F97316" Foreground="White" BorderBrush="#F97316" Click="ExportReportButton_OnClick" />
                             <Button Content="刷新主数据" Width="148" Height="44" Margin="0,0,12,12" Background="#475569" Foreground="White" BorderBrush="#475569" Click="RefreshDataButton_OnClick" />
                             <Button Content="查看建表脚本" Width="148" Height="44" Margin="0,0,12,12" Background="#F59E0B" Foreground="White" BorderBrush="#F59E0B" Click="OpenSchemaButton_OnClick" />
                         </WrapPanel>
@@ -407,7 +408,10 @@
                                 <TextBox x:Name="RecordGraininessValueTextBox" Text="2.06" />
                                 <TextBlock Text="Graininess 差值" Margin="0,10,0,4" />
                                 <TextBox x:Name="RecordGraininessDiffTextBox" Text="0.14" />
-                                <Button Content="保存手工记录" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveMeasurementRecordButton_OnClick" />
+                                <WrapPanel Margin="0,18,0,0">
+                                    <Button Content="保存手工记录" Width="150" Height="40" Margin="0,0,10,10" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveMeasurementRecordButton_OnClick" />
+                                    <Button Content="导出当前报告" Width="150" Height="40" Margin="0,0,10,10" Background="#F97316" Foreground="White" BorderBrush="#F97316" Click="ExportReportButton_OnClick" />
+                                </WrapPanel>
                             </StackPanel>
                         </ScrollViewer>
 
@@ -485,6 +489,58 @@
                         </Grid>
                     </Grid>
                 </TabItem>
+                <TabItem Header="报告中心">
+                    <Grid Margin="18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="1.2*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="导出选中记录" Width="130" Height="40" Margin="0,0,10,0" Background="#F97316" Foreground="White" BorderBrush="#F97316" Click="ExportReportButton_OnClick" />
+                            <Button Content="打开导出目录" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="OpenReportFolderButton_OnClick" />
+                            <TextBlock Text="说明：选中测量记录后可导出 Markdown 报告，导出记录与关键操作日志会在下方显示。" Foreground="#CBD5E1" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <DataGrid x:Name="ReportExportGrid"
+                                  Grid.Row="1"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="报告编号" Binding="{Binding ReportCode}" Width="180" />
+                                <DataGridTextColumn Header="记录ID" Binding="{Binding RecordId}" Width="220" />
+                                <DataGridTextColumn Header="格式" Binding="{Binding FileFormat}" Width="80" />
+                                <DataGridTextColumn Header="路径" Binding="{Binding FilePath}" Width="420" />
+                                <DataGridTextColumn Header="导出时间" Binding="{Binding ExportedAt}" Width="180" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding ExportStatus}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid x:Name="OperationLogGrid"
+                                  Grid.Row="2"
+                                  Margin="0,18,0,0"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="100" />
+                                <DataGridTextColumn Header="操作" Binding="{Binding OperationType}" Width="100" />
+                                <DataGridTextColumn Header="描述" Binding="{Binding OperationDesc}" Width="360" />
+                                <DataGridTextColumn Header="结果" Binding="{Binding OperationResult}" Width="100" />
+                                <DataGridTextColumn Header="任务ID" Binding="{Binding TaskId}" Width="220" />
+                                <DataGridTextColumn Header="记录ID" Binding="{Binding RecordId}" Width="220" />
+                                <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
             </TabControl>
 
             <Border Grid.Row="3" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
@@ -512,6 +568,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 

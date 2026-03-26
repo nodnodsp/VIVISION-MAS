@@ -19,6 +19,18 @@ VALUES ($id, $sample_code, $sample_name, $batch_no, $material_name, $color_name,
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<Sample?> GetByIdAsync(string sampleId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = SqliteConnectionFactory.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT id, sample_code, sample_name, batch_no, material_name, color_name, status, created_at, updated_at
+FROM samples WHERE id = $id LIMIT 1;";
+        command.Parameters.AddWithValue("$id", sampleId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+    }
+
     public async Task<Sample?> GetByCodeAsync(string sampleCode, CancellationToken cancellationToken = default)
     {
         await using var connection = SqliteConnectionFactory.Create();

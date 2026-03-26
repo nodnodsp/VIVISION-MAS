@@ -30,6 +30,18 @@ VALUES ($id, $task_id, $record_no, $record_type, $total_delta_e, $total_effect_d
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<MeasurementRecord?> GetByIdAsync(string recordId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = SqliteConnectionFactory.Create();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"SELECT id, task_id, record_no, record_type, total_delta_e, total_effect_diff, pass_status, result_summary, measured_at, created_at
+FROM measurement_records WHERE id = $id LIMIT 1;";
+        command.Parameters.AddWithValue("$id", recordId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;
+    }
+
     public async Task<IReadOnlyList<MeasurementRecord>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var items = new List<MeasurementRecord>();

@@ -16,6 +16,8 @@ var taskRepository = new SqliteMeasurementTaskRepository();
 var measurementRecordRepository = new SqliteMeasurementRecordRepository();
 var angleResultRepository = new SqliteMeasurementAngleResultRepository();
 var effectResultRepository = new SqliteMeasurementEffectResultRepository();
+var reportExportRepository = new SqliteReportExportRepository();
+var operationLogRepository = new SqliteOperationLogRepository();
 
 var instrumentConnectionService = new SimulatedInstrumentConnectionService(
     instrumentRepository,
@@ -27,6 +29,16 @@ var workflowService = new MeasurementWorkflowService(
     angleResultRepository,
     effectResultRepository,
     new SimulatedInstrumentMeasurementService());
+var reportService = new MeasurementReportService(
+    measurementRecordRepository,
+    taskRepository,
+    angleResultRepository,
+    effectResultRepository,
+    sampleRepository,
+    standardSampleRepository,
+    templateRepository,
+    reportExportRepository,
+    operationLogRepository);
 
 var instrument = await instrumentRepository.GetDefaultAsync()
                  ?? throw new InvalidOperationException("未找到默认仪器。");
@@ -91,6 +103,7 @@ await taskRepository.AddAsync(task);
 
 var standardResult = await workflowService.ExecuteMeasurementAsync(task.TaskCode, "standard");
 var trialResult = await workflowService.ExecuteMeasurementAsync(task.TaskCode, "trial");
+var reportResult = await reportService.ExportRecordReportAsync(trialResult.Record.Id);
 
 var instruments = await instrumentRepository.GetAllAsync();
 var calibrations = await calibrationRecordRepository.GetAllAsync();
@@ -99,6 +112,8 @@ var standards = await standardSampleRepository.GetAllAsync();
 var templates = await templateRepository.GetAllAsync();
 var tasks = await taskRepository.GetAllAsync();
 var records = await measurementRecordRepository.GetAllAsync();
+var exports = await reportExportRepository.GetAllAsync();
+var logs = await operationLogRepository.GetRecentAsync(10);
 var latestRecord = records.FirstOrDefault();
 var angleResults = latestRecord is null ? Array.Empty<MeasurementAngleResult>() : await angleResultRepository.GetByRecordIdAsync(latestRecord.Id);
 var effectResults = latestRecord is null ? Array.Empty<MeasurementEffectResult>() : await effectResultRepository.GetByRecordIdAsync(latestRecord.Id);
@@ -114,13 +129,16 @@ Console.WriteLine($"Standard samples: {standards.Count}");
 Console.WriteLine($"Templates: {templates.Count}");
 Console.WriteLine($"Tasks: {tasks.Count}");
 Console.WriteLine($"Measurement records: {records.Count}");
+Console.WriteLine($"Report exports: {exports.Count} / Latest={reportResult.ReportCode}");
+Console.WriteLine($"Recent operation logs: {logs.Count}");
 Console.WriteLine($"Latest task: {task.TaskCode} / Status={latestTask?.Status}");
 Console.WriteLine($"Standard measurement record: {standardResult.Record.RecordNo} / DeltaE={standardResult.Record.TotalDeltaE}");
 Console.WriteLine($"Trial measurement record: {trialResult.Record.RecordNo} / DeltaE={trialResult.Record.TotalDeltaE}");
+Console.WriteLine($"Report path: {reportResult.FilePath}");
 if (latestRecord is not null)
 {
     Console.WriteLine($"Latest record: {latestRecord.Id} / Type={latestRecord.RecordType} / DeltaE={latestRecord.TotalDeltaE} / Effect={latestRecord.TotalEffectDiff}");
     Console.WriteLine($"Angle results: {angleResults.Count}");
     Console.WriteLine($"Effect results: {effectResults.Count}");
 }
-Console.WriteLine("Database bootstrap and workflow verification completed successfully.");
+Console.WriteLine("Database bootstrap, workflow and report verification completed successfully.");

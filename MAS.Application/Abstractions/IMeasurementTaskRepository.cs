@@ -6,6 +6,7 @@ public interface IMeasurementTaskRepository
 {
     Task AddAsync(MeasurementTask task, CancellationToken cancellationToken = default);
     Task UpdateAsync(MeasurementTask task, CancellationToken cancellationToken = default);
+    Task<MeasurementTask?> GetByIdAsync(string taskId, CancellationToken cancellationToken = default);
     Task<MeasurementTask?> GetByCodeAsync(string taskCode, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<MeasurementTask>> GetAllAsync(CancellationToken cancellationToken = default);
 }

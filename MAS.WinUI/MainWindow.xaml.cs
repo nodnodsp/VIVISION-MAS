@@ -24,8 +24,11 @@ public partial class MainWindow : Window
     private readonly SqliteMeasurementRecordRepository _measurementRecordRepository = new();
     private readonly SqliteMeasurementAngleResultRepository _angleResultRepository = new();
     private readonly SqliteMeasurementEffectResultRepository _effectResultRepository = new();
+    private readonly SqliteReportExportRepository _reportExportRepository = new();
+    private readonly SqliteOperationLogRepository _operationLogRepository = new();
     private readonly MeasurementWorkflowService _workflowService;
     private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
+    private readonly MeasurementReportService _reportService;
 
     public MainWindow()
     {
@@ -39,6 +42,17 @@ public partial class MainWindow : Window
             _angleResultRepository,
             _effectResultRepository,
             new SimulatedInstrumentMeasurementService());
+
+        _reportService = new MeasurementReportService(
+            _measurementRecordRepository,
+            _taskRepository,
+            _angleResultRepository,
+            _effectResultRepository,
+            _sampleRepository,
+            _standardSampleRepository,
+            _templateRepository,
+            _reportExportRepository,
+            _operationLogRepository);
 
         InitializeComponent();
         DatabasePathText.Text = _bootstrapper.DatabasePath;
@@ -60,7 +74,7 @@ public partial class MainWindow : Window
     private async void RefreshDataButton_OnClick(object sender, RoutedEventArgs e)
     {
         await RefreshAllDataAsync();
-        AppendLog("主数据与测量记录已刷新。");
+        AppendLog("主数据、报告与日志已刷新。");
     }
 
     private async void ConnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
@@ -119,6 +133,7 @@ public partial class MainWindow : Window
         };
 
         await _sampleRepository.AddAsync(sample);
+        await WriteOperationLogAsync("sample", "create", "success", $"新增试样 {sample.SampleCode}");
         AppendLog($"已保存试样: {sample.SampleCode}");
         ClearSampleInputs();
         await RefreshAllDataAsync();
@@ -164,6 +179,7 @@ public partial class MainWindow : Window
         };
 
         await _templateRepository.AddAsync(template);
+        await WriteOperationLogAsync("template", "create", "success", $"新增容差模板 {template.TemplateCode}");
         AppendLog($"已保存模板: {template.TemplateCode}");
         ClearTemplateInputs();
         await RefreshAllDataAsync();
@@ -207,6 +223,7 @@ public partial class MainWindow : Window
         };
 
         await _standardSampleRepository.AddAsync(standardSample);
+        await WriteOperationLogAsync("standard_sample", "create", "success", $"新增标准样 {standardSample.StandardCode}");
         AppendLog($"已保存标准样: {standardSample.StandardCode}");
         ClearStandardInputs();
         await RefreshAllDataAsync();
@@ -233,6 +250,7 @@ public partial class MainWindow : Window
             templateId: template.Id);
 
         await _taskRepository.AddAsync(task);
+        await WriteOperationLogAsync("task", "create", "success", $"创建任务草稿 {task.TaskCode}", task.Id);
         SelectTask(task);
         AppendLog($"已创建任务草稿: {task.TaskCode}");
         await RefreshAllDataAsync();
@@ -329,8 +347,49 @@ public partial class MainWindow : Window
             },
         });
 
+        await WriteOperationLogAsync("measurement", "manual_save", "success", $"手工保存测量记录 {record.RecordNo}", task.Id, record.Id);
         AppendLog($"已保存手工记录: Task={taskCode}, RecordNo={record.RecordNo}");
         await RefreshAllDataAsync(record.Id);
+    }
+
+    private async void ExportReportButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await EnsureDatabaseReadyAsync();
+
+        var record = MeasurementRecordGrid.SelectedItem as MeasurementRecord ?? (await _measurementRecordRepository.GetAllAsync()).FirstOrDefault();
+        if (record is null)
+        {
+            MessageBox.Show(this, "当前没有可导出的测量记录。", "导出报告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var result = await _reportService.ExportRecordReportAsync(record.Id);
+            AppendLog($"报告已导出: {result.ReportCode}");
+            await RefreshAllDataAsync(record.Id);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"导出报告失败: {ex.Message}");
+            await WriteOperationLogAsync("report", "export", "failed", ex.Message, recordId: record.Id);
+            MessageBox.Show(this, ex.Message, "导出报告", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OpenReportFolderButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = GetReportFolderPath();
+            Directory.CreateDirectory(folder);
+            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            AppendLog($"已打开报告目录: {folder}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"打开报告目录失败: {ex.Message}");
+        }
     }
 
     private async void TaskGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -385,6 +444,7 @@ public partial class MainWindow : Window
         var updated = connect
             ? await _instrumentConnectionService.ConnectAsync(instrument.Id)
             : await _instrumentConnectionService.DisconnectAsync(instrument.Id);
+        await WriteOperationLogAsync("instrument", connect ? "connect" : "disconnect", "success", $"仪器{(connect ? "连接" : "断开")} {updated.InstrumentCode}");
         SelectInstrument(updated);
         AppendLog(connect ? $"仪器已连接: {updated.InstrumentCode}" : $"仪器已断开: {updated.InstrumentCode}");
         await RefreshAllDataAsync();
@@ -401,6 +461,7 @@ public partial class MainWindow : Window
         }
 
         var record = await _instrumentConnectionService.CalibrateAsync(instrument.Id, calibrationType);
+        await WriteOperationLogAsync("instrument", "calibration", "success", $"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成", recordId: record.Id);
         AppendLog($"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成: {instrument.InstrumentCode}");
         await RefreshAllDataAsync();
         CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(record.InstrumentId);
@@ -420,6 +481,7 @@ public partial class MainWindow : Window
         try
         {
             var result = await _workflowService.ExecuteMeasurementAsync(taskCode, recordType);
+            await WriteOperationLogAsync("measurement", recordType, "success", $"{displayName}测量完成", result.Task.Id, result.Record.Id);
             SelectTask(result.Task);
             ApplyRecordToInputs(result.Record, result.AngleResults.FirstOrDefault(), result.EffectResults.FirstOrDefault());
             AppendLog($"{displayName}测量完成: {result.Task.TaskCode} / 记录 {result.Record.RecordNo}");
@@ -428,6 +490,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AppendLog($"{displayName}测量失败: {ex.Message}");
+            await WriteOperationLogAsync("measurement", recordType, "failed", ex.Message);
             MessageBox.Show(this, ex.Message, $"执行{displayName}测量", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -468,6 +531,8 @@ public partial class MainWindow : Window
         var templates = await _templateRepository.GetAllAsync();
         var tasks = await _taskRepository.GetAllAsync();
         var records = await _measurementRecordRepository.GetAllAsync();
+        var reportExports = await _reportExportRepository.GetAllAsync();
+        var operationLogs = await _operationLogRepository.GetRecentAsync(50);
 
         InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = samples;
@@ -475,6 +540,8 @@ public partial class MainWindow : Window
         TemplateGrid.ItemsSource = templates;
         TaskGrid.ItemsSource = tasks;
         MeasurementRecordGrid.ItemsSource = records;
+        ReportExportGrid.ItemsSource = reportExports;
+        OperationLogGrid.ItemsSource = operationLogs;
 
         var selectedInstrument = instruments.FirstOrDefault();
         if (selectedInstrument is not null)
@@ -563,6 +630,25 @@ public partial class MainWindow : Window
         RecordPassStatusComboBox.SelectedIndex = 0;
     }
 
+    private async Task WriteOperationLogAsync(string moduleName, string operationType, string operationResult, string description, string? taskId = null, string? recordId = null)
+    {
+        await _operationLogRepository.AddAsync(new OperationLog
+        {
+            TaskId = taskId,
+            RecordId = recordId,
+            ModuleName = moduleName,
+            OperationType = operationType,
+            OperationDesc = description,
+            OperationResult = operationResult,
+            CreatedAt = DateTime.UtcNow,
+        });
+    }
+
+    private static string GetReportFolderPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "Exports", "Reports");
+    }
+
     private void ClearSampleInputs()
     {
         SampleCodeTextBox.Clear();
@@ -632,4 +718,3 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
-
