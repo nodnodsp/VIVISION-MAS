@@ -71,8 +71,8 @@
                 <Border Margin="0,0,12,0" Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
                         <TextBlock Text="设备状态" Foreground="#93C5FD" FontSize="15" />
-                        <TextBlock Text="未连接" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="等待连接真实仪器" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock x:Name="DashboardInstrumentStatusText" Text="未连接" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
+                        <TextBlock x:Name="DashboardInstrumentDetailText" Text="等待连接真实仪器" Foreground="#CBD5E1" FontSize="14" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border Margin="0,0,12,0" Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
@@ -86,14 +86,14 @@
                     <StackPanel Margin="20">
                         <TextBlock Text="当前任务" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock x:Name="TaskCodeText" Text="未创建" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock x:Name="TaskStatusText" Text="选中样品后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock x:Name="TaskStatusText" Text="选中样品后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
-                        <TextBlock Text="开发进度" Foreground="#93C5FD" FontSize="15" />
-                        <TextBlock Text="1.0" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="标准样/试样流程已接入" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock Text="任务与报告" Foreground="#93C5FD" FontSize="15" />
+                        <TextBlock x:Name="DashboardTaskCountText" Text="0 / 0" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
+                        <TextBlock x:Name="DashboardTaskReportDetailText" Text="暂无任务与报告数据" Foreground="#CBD5E1" FontSize="14" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -121,7 +121,7 @@
                 <Border Grid.Column="1" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="22">
                         <TextBlock Text="开发备注" Foreground="White" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock Text="当前已支持试样、标准样、容差模板、任务草稿、测量记录、角度结果和效果结果写入 SQLite。" Foreground="#94A3B8" FontSize="14" Margin="0,10,0,0" TextWrapping="Wrap" />
+                        <TextBlock x:Name="DashboardRecentActivityText" Text="当前已支持试样、标准样、容差模板、任务草稿、测量记录、角度结果和效果结果写入 SQLite。" Foreground="#94A3B8" FontSize="14" Margin="0,10,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -367,10 +367,10 @@
                         </Grid>
                     </Grid>
                 </TabItem>
-
                 <TabItem Header="任务草稿">
                     <Grid Margin="18">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
@@ -379,8 +379,26 @@
                             <Button Content="刷新任务列表" Width="130" Height="40" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="RefreshDataButton_OnClick" />
                             <TextBlock Text="用于查看当前测量任务、状态流转和绑定信息。" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="12,0,0,0" />
                         </WrapPanel>
+                        <Grid Grid.Row="1" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="0.9*" />
+                            </Grid.ColumnDefinitions>
+                            <GroupBox Header="任务概览" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="TaskSummaryTextBlock" Text="请选择任务查看概览。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="TaskMetricTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Grid.Column="1" Header="最近活动" Margin="9,0,0,0" Foreground="White" BorderBrush="#334155">
+                                <StackPanel Margin="12">
+                                    <TextBlock x:Name="TaskRecentActivityTextBlock" Text="暂无最近活动。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock x:Name="TaskRecentReportTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </GroupBox>
+                        </Grid>
                         <DataGrid x:Name="TaskGrid"
-                                  Grid.Row="1"
+                                  Grid.Row="2"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   Background="#0F172A"
@@ -400,8 +418,7 @@
                         </DataGrid>
                     </Grid>
                 </TabItem>
-
-                <TabItem Header="测量记录">
+<TabItem Header="测量记录">
                     <Grid Margin="18">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="360" />
@@ -684,6 +701,8 @@
         </Border>
     </Grid>
 </Window>
+
+
 
 
 

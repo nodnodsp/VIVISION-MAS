@@ -905,8 +905,44 @@ public partial class MainWindow : Window
         MeasurementDetailTextBlock.Text = $"测量时间: {record.MeasuredAt:yyyy-MM-dd HH:mm:ss} | 角度结果: {angleResults.Count} 条，最大 ΔE {maxAngleDelta:0.00}，平均 ΔE {avgAngleDelta:0.00} | 效果结果: {effectResults.Count} 条，最大 Sparkle 差 {maxSparkleDiff:0.00}，最大 Graininess 差 {maxGraininessDiff:0.00} | 摘要: {(string.IsNullOrWhiteSpace(record.ResultSummary) ? "-" : record.ResultSummary)}";
     }
 
+    private void UpdateDashboardSummary(
+        IReadOnlyList<Instrument> instruments,
+        IReadOnlyList<CalibrationRecord> calibrationRecords,
+        IReadOnlyList<MeasurementTask> tasks,
+        IReadOnlyList<MeasurementRecord> records,
+        IReadOnlyList<ReportExport> reportExports,
+        IReadOnlyList<OperationLog> operationLogs)
+    {
+        var defaultInstrument = instruments.FirstOrDefault();
+        DashboardInstrumentStatusText.Text = defaultInstrument?.Status switch
+        {
+            "connected" => "已连接",
+            "calibrated" => "已校准",
+            _ => "未连接",
+        };
+
+        var latestCalibration = calibrationRecords.OrderByDescending(x => x.FinishedAt ?? x.StartedAt).FirstOrDefault();
+        DashboardInstrumentDetailText.Text = defaultInstrument is null
+            ? "未找到默认仪器。"
+            : $"{defaultInstrument.InstrumentName} / 端口 {(string.IsNullOrWhiteSpace(defaultInstrument.PortName) ? "-" : defaultInstrument.PortName)} / 最近校准 {(latestCalibration is null ? "暂无" : $"{latestCalibration.CalibrationType}:{latestCalibration.ResultCode}")}";
+
+        var completedTasks = tasks.Count(x => x.Status == MAS.Core.Enums.TaskStatus.Completed);
+        DashboardTaskCountText.Text = $"{tasks.Count} / {reportExports.Count}";
+        var latestReport = reportExports.OrderByDescending(x => x.ExportedAt).FirstOrDefault();
+        DashboardTaskReportDetailText.Text = $"完成任务 {completedTasks} 条，测量记录 {records.Count} 条，最近报告 {(latestReport is null ? "暂无" : latestReport.ReportCode)}";
+
+        var latestLog = operationLogs.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+        DashboardRecentActivityText.Text = latestLog is null
+            ? "当前暂无最新活动。"
+            : $"最近活动: [{latestLog.ModuleName}] {latestLog.OperationType} / {latestLog.OperationResult} / {latestLog.CreatedAt:yyyy-MM-dd HH:mm:ss}";
+    }
+
     private void ClearTaskSummary()
     {
+        TaskSummaryTextBlock.Text = "请选择任务查看概览。";
+        TaskMetricTextBlock.Text = "-";
+        TaskRecentActivityTextBlock.Text = "暂无最近活动。";
+        TaskRecentReportTextBlock.Text = "-";
         TaskContextTextBlock.Text = "请选择任务查看上下文。";
         TaskBindingTextBlock.Text = "-";
     }
@@ -932,9 +968,30 @@ public partial class MainWindow : Window
         TaskStatusText.Text = $"任务状态: {task.Status}";
         RecordTaskCodeTextBox.Text = task.TaskCode;
         await LoadTaskSummaryAsync(task);
+        UpdateTaskOverview(task);
     }
 
-    private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResult? angle, MeasurementEffectResult? effect)
+        private void UpdateTaskOverview(MeasurementTask task)
+    {
+        var taskRecords = _allMeasurementRecords.Where(x => x.TaskId == task.Id).OrderByDescending(x => x.MeasuredAt).ToList();
+        var standardCount = taskRecords.Count(x => string.Equals(x.RecordType, "standard", StringComparison.OrdinalIgnoreCase));
+        var trialCount = taskRecords.Count(x => string.Equals(x.RecordType, "trial", StringComparison.OrdinalIgnoreCase));
+        var latestRecord = taskRecords.FirstOrDefault();
+        var latestReport = latestRecord is null
+            ? null
+            : _allReportExports.Where(x => x.RecordId == latestRecord.Id).OrderByDescending(x => x.ExportedAt).FirstOrDefault();
+        var latestActivity = _allOperationLogs.Where(x => x.TaskId == task.Id).OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+
+        TaskSummaryTextBlock.Text = $"任务 {task.TaskCode} 当前状态 {task.Status}，测量模式 {task.MeasurementMode}，平均次数 {task.AverageCount}，间隔 {task.IntervalSeconds}s。";
+        TaskMetricTextBlock.Text = $"记录总数 {taskRecords.Count}，标准样记录 {standardCount}，试样记录 {trialCount}，最近测量 {(latestRecord is null ? "暂无" : $"{latestRecord.RecordType} / {latestRecord.PassStatus} / ΔE {latestRecord.TotalDeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}")}";
+        TaskRecentActivityTextBlock.Text = latestActivity is null
+            ? "暂无最近活动。"
+            : $"最近活动: [{latestActivity.ModuleName}] {latestActivity.OperationType} / {latestActivity.OperationResult} / {latestActivity.CreatedAt:yyyy-MM-dd HH:mm:ss}";
+        TaskRecentReportTextBlock.Text = latestReport is null
+            ? "最近报告: 暂无"
+            : $"最近报告: {latestReport.ReportCode} / {latestReport.ExportedAt:yyyy-MM-dd HH:mm:ss}";
+    }
+private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResult? angle, MeasurementEffectResult? effect)
     {
         RecordTaskCodeTextBox.Text = TaskCodeText.Text;
         RecordNoTextBox.Text = record.RecordNo.ToString(CultureInfo.InvariantCulture);
@@ -1058,6 +1115,9 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
 
 
 
