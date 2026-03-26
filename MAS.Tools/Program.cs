@@ -1,17 +1,20 @@
 ﻿using MAS.Application.Services;
 using MAS.Core.Entities;
+using MAS.Core.Enums;
 using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Repositories;
-using Microsoft.Data.Sqlite;
 
 var bootstrapper = new SqliteScriptBootstrapper();
 await bootstrapper.EnsureCreatedAsync();
-await EnsureBaseDataAsync(bootstrapper.DatabasePath);
+await DefaultDataSeeder.EnsureSeedDataAsync();
 
 var sampleRepository = new SqliteSampleRepository();
 var standardSampleRepository = new SqliteStandardSampleRepository();
 var templateRepository = new SqliteToleranceTemplateRepository();
 var taskRepository = new SqliteMeasurementTaskRepository();
+var measurementRecordRepository = new SqliteMeasurementRecordRepository();
+var angleResultRepository = new SqliteMeasurementAngleResultRepository();
+var effectResultRepository = new SqliteMeasurementEffectResultRepository();
 var taskService = new MeasurementTaskService();
 
 var template = await templateRepository.GetByCodeAsync("TPL-DEFAULT") ?? new ToleranceTemplate
@@ -73,10 +76,70 @@ var task = taskService.CreateDraftTask(
     templateId: template.Id);
 await taskRepository.AddAsync(task);
 
+var taskRecords = await measurementRecordRepository.GetByTaskIdAsync(task.Id);
+if (taskRecords.Count == 0)
+{
+    var record = new MeasurementRecord
+    {
+        TaskId = task.Id,
+        RecordNo = 1,
+        RecordType = "trial",
+        TotalDeltaE = 0.68,
+        TotalEffectDiff = 0.32,
+        PassStatus = PassStatus.Pass,
+        ResultSummary = "演示记录：综合色差与效果差均在容差内。",
+        MeasuredAt = DateTime.UtcNow,
+    };
+
+    await measurementRecordRepository.AddAsync(record);
+
+    await angleResultRepository.AddRangeAsync(new[]
+    {
+        new MeasurementAngleResult
+        {
+            RecordId = record.Id,
+            AngleCode = "15as-15",
+            CieL = 51.24,
+            CieA = -0.32,
+            CieB = -1.68,
+            DeltaE = 0.52,
+            PassStatus = PassStatus.Pass,
+        },
+        new MeasurementAngleResult
+        {
+            RecordId = record.Id,
+            AngleCode = "45as110",
+            CieL = 63.14,
+            CieA = -1.04,
+            CieB = -3.18,
+            DeltaE = 0.81,
+            PassStatus = PassStatus.Pass,
+        },
+    });
+
+    await effectResultRepository.AddRangeAsync(new[]
+    {
+        new MeasurementEffectResult
+        {
+            RecordId = record.Id,
+            AngleCode = "45as110",
+            SparkleValue = 4.12,
+            SparkleDiff = 0.18,
+            GraininessValue = 2.06,
+            GraininessDiff = 0.14,
+            EffectPassStatus = PassStatus.Pass,
+        },
+    });
+}
+
 var samples = await sampleRepository.GetAllAsync();
 var standards = await standardSampleRepository.GetAllAsync();
 var templates = await templateRepository.GetAllAsync();
 var tasks = await taskRepository.GetAllAsync();
+var records = await measurementRecordRepository.GetAllAsync();
+var latestRecord = records.FirstOrDefault();
+var angleResults = latestRecord is null ? Array.Empty<MeasurementAngleResult>() : await angleResultRepository.GetByRecordIdAsync(latestRecord.Id);
+var effectResults = latestRecord is null ? Array.Empty<MeasurementEffectResult>() : await effectResultRepository.GetByRecordIdAsync(latestRecord.Id);
 
 Console.WriteLine("MAS V1 development tool");
 Console.WriteLine($"Database file: {bootstrapper.DatabasePath}");
@@ -85,37 +148,12 @@ Console.WriteLine($"Samples: {samples.Count}");
 Console.WriteLine($"Standard samples: {standards.Count}");
 Console.WriteLine($"Templates: {templates.Count}");
 Console.WriteLine($"Tasks: {tasks.Count}");
+Console.WriteLine($"Measurement records: {records.Count}");
 Console.WriteLine($"Latest task: {task.TaskCode}");
-Console.WriteLine("Database bootstrap and repository verification completed successfully.");
-
-static async Task EnsureBaseDataAsync(string databasePath)
+if (latestRecord is not null)
 {
-    var connectionString = new SqliteConnectionStringBuilder
-    {
-        DataSource = databasePath,
-        ForeignKeys = true,
-    }.ToString();
-
-    await using var connection = new SqliteConnection(connectionString);
-    await connection.OpenAsync();
-
-    await using (var command = connection.CreateCommand())
-    {
-        command.CommandText = @"
-INSERT OR IGNORE INTO instruments (id, instrument_code, instrument_name, model, connection_type, is_default, status, created_at, updated_at)
-VALUES ('instrument-default', 'INS-DEMO-001', '演示仪器', 'MAS-6A', 'serial', 1, 'idle', $created_at, $updated_at);";
-        command.Parameters.AddWithValue("$created_at", DateTime.UtcNow.ToString("O"));
-        command.Parameters.AddWithValue("$updated_at", DateTime.UtcNow.ToString("O"));
-        await command.ExecuteNonQueryAsync();
-    }
-
-    await using (var command = connection.CreateCommand())
-    {
-        command.CommandText = @"
-INSERT OR IGNORE INTO color_libraries (id, library_code, library_name, is_default, created_at, updated_at)
-VALUES ('library-default', 'LIB-DEMO-001', '默认颜色库', 1, $created_at, $updated_at);";
-        command.Parameters.AddWithValue("$created_at", DateTime.UtcNow.ToString("O"));
-        command.Parameters.AddWithValue("$updated_at", DateTime.UtcNow.ToString("O"));
-        await command.ExecuteNonQueryAsync();
-    }
+    Console.WriteLine($"Latest record: {latestRecord.Id} / DeltaE={latestRecord.TotalDeltaE} / Effect={latestRecord.TotalEffectDiff}");
+    Console.WriteLine($"Angle results: {angleResults.Count}");
+    Console.WriteLine($"Effect results: {effectResults.Count}");
 }
+Console.WriteLine("Database bootstrap and repository verification completed successfully.");

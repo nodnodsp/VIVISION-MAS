@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="MAS V1 多角度测色仪工作台"
-        Height="860"
-        Width="1380"
-        MinWidth="1200"
-        MinHeight="760"
+        Height="940"
+        Width="1480"
+        MinWidth="1280"
+        MinHeight="820"
+        Loaded="MainWindow_OnLoaded"
         WindowStartupLocation="CenterScreen"
         Background="#0F172A">
     <Grid>
@@ -30,7 +31,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                     <TextBlock Text="MAS V1 多角度测色仪工作台" Foreground="White" FontSize="26" FontWeight="Bold" />
-                    <TextBlock Text="1.0 开发版 / WPF + .NET 8" Foreground="#93C5FD" FontSize="13" />
+                    <TextBlock Text="1.0 开发版 / WPF + .NET 8 / SQLite" Foreground="#93C5FD" FontSize="13" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="环境状态：" Foreground="#CBD5E1" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
@@ -62,8 +63,10 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="168" />
                 <RowDefinition Height="220" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="180" />
             </Grid.RowDefinitions>
+
             <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,18">
                 <Border Margin="0,0,12,0" Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
@@ -76,21 +79,21 @@
                     <StackPanel Margin="20">
                         <TextBlock Text="数据库状态" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock x:Name="DatabaseStatusText" Text="未初始化" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock x:Name="DatabasePathText" Text="Data\\MASQC.db" Foreground="#CBD5E1" FontSize="14" TextWrapping="Wrap" />
+                        <TextBlock x:Name="DatabasePathText" Text="Data\MASQC.db" Foreground="#CBD5E1" FontSize="14" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border Margin="0,0,12,0" Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
                         <TextBlock Text="当前任务" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock x:Name="TaskCodeText" Text="未创建" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="初始化后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock Text="选中样品后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" />
                     </StackPanel>
                 </Border>
                 <Border Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
                         <TextBlock Text="开发进度" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock Text="1.0" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="数据库与主工作台已接通" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock Text="测量记录链路已接入" Foreground="#CBD5E1" FontSize="14" />
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -103,10 +106,11 @@
                 <Border Margin="0,0,12,0" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="22">
                         <TextBlock Text="快速操作" Foreground="White" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock Text="先把数据库、任务流和主界面接通，再逐步接真实设备与测量流程。" Foreground="#94A3B8" FontSize="14" Margin="0,8,0,18" />
+                        <TextBlock Text="先完成数据库和主数据初始化，再逐步接真实设备与测量流程。" Foreground="#94A3B8" FontSize="14" Margin="0,8,0,18" />
                         <WrapPanel>
                             <Button x:Name="InitializeDatabaseButton" Content="初始化数据库" Width="148" Height="44" Margin="0,0,12,12" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="InitializeDatabaseButton_OnClick" />
                             <Button Content="生成任务草稿" Width="148" Height="44" Margin="0,0,12,12" Background="#0EA5E9" Foreground="White" BorderBrush="#0EA5E9" Click="CreateDraftTaskButton_OnClick" />
+                            <Button Content="刷新主数据" Width="148" Height="44" Margin="0,0,12,12" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="RefreshDataButton_OnClick" />
                             <Button Content="查看建表脚本" Width="148" Height="44" Margin="0,0,12,12" Background="#F59E0B" Foreground="White" BorderBrush="#F59E0B" Click="OpenSchemaButton_OnClick" />
                         </WrapPanel>
                     </StackPanel>
@@ -114,36 +118,319 @@
                 <Border Grid.Column="1" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="22">
                         <TextBlock Text="开发备注" Foreground="White" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock Text="当前 UI 是 1.0 工作台壳子，下一步将接入样品、标准样、容差模板和真实测量流程。" Foreground="#94A3B8" FontSize="14" Margin="0,10,0,0" TextWrapping="Wrap" />
+                        <TextBlock Text="当前已支持试样、标准样、容差模板、任务草稿、测量记录、角度结果和效果结果写入 SQLite。" Foreground="#94A3B8" FontSize="14" Margin="0,10,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </Grid>
 
-            <Border Grid.Row="2" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
-                <Grid Margin="22">
+            <TabControl Grid.Row="2" Margin="0,0,0,18" Background="#101B33" BorderBrush="#334155" Foreground="White">
+                <TabItem Header="样品管理">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="新增试样" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <TextBlock Text="样品编号" Margin="0,6,0,4" />
+                            <TextBox x:Name="SampleCodeTextBox" />
+                            <TextBlock Text="样品名称" Margin="0,10,0,4" />
+                            <TextBox x:Name="SampleNameTextBox" />
+                            <TextBlock Text="批次" Margin="0,10,0,4" />
+                            <TextBox x:Name="SampleBatchTextBox" />
+                            <TextBlock Text="材质" Margin="0,10,0,4" />
+                            <TextBox x:Name="SampleMaterialTextBox" />
+                            <TextBlock Text="颜色名称" Margin="0,10,0,4" />
+                            <TextBox x:Name="SampleColorTextBox" />
+                            <Button Content="保存试样" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveSampleButton_OnClick" />
+                        </StackPanel>
+                        <DataGrid x:Name="SampleGrid"
+                                  Grid.Column="1"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="编号" Binding="{Binding SampleCode}" Width="160" />
+                                <DataGridTextColumn Header="名称" Binding="{Binding SampleName}" Width="180" />
+                                <DataGridTextColumn Header="批次" Binding="{Binding BatchNo}" Width="160" />
+                                <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
+                                <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="标准样管理">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="新增标准样" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <TextBlock Text="标准样编号" Margin="0,6,0,4" />
+                            <TextBox x:Name="StandardCodeTextBox" />
+                            <TextBlock Text="标准样名称" Margin="0,10,0,4" />
+                            <TextBox x:Name="StandardNameTextBox" />
+                            <TextBlock Text="材质" Margin="0,10,0,4" />
+                            <TextBox x:Name="StandardMaterialTextBox" />
+                            <TextBlock Text="颜色名称" Margin="0,10,0,4" />
+                            <TextBox x:Name="StandardColorTextBox" />
+                            <TextBlock Text="模板编号" Margin="0,10,0,4" />
+                            <TextBox x:Name="StandardTemplateCodeTextBox" Text="TPL-DEFAULT" />
+                            <Button Content="保存标准样" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveStandardSampleButton_OnClick" />
+                        </StackPanel>
+                        <DataGrid x:Name="StandardSampleGrid"
+                                  Grid.Column="1"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="编号" Binding="{Binding StandardCode}" Width="160" />
+                                <DataGridTextColumn Header="名称" Binding="{Binding StandardName}" Width="180" />
+                                <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="180" />
+                                <DataGridTextColumn Header="颜色" Binding="{Binding ColorName}" Width="140" />
+                                <DataGridTextColumn Header="版本" Binding="{Binding VersionNo}" Width="80" />
+                                <DataGridCheckBoxColumn Header="启用" Binding="{Binding IsActive}" Width="80" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="模板管理">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="新增容差模板" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <TextBlock Text="模板编号" Margin="0,6,0,4" />
+                            <TextBox x:Name="TemplateCodeTextBox" />
+                            <TextBlock Text="模板名称" Margin="0,10,0,4" />
+                            <TextBox x:Name="TemplateNameTextBox" />
+                            <TextBlock Text="色差公式" Margin="0,10,0,4" />
+                            <TextBox x:Name="TemplateFormulaTextBox" Text="DE00" />
+                            <TextBlock Text="综合色差上限" Margin="0,10,0,4" />
+                            <TextBox x:Name="TemplateOverallLimitTextBox" Text="1.0" />
+                            <TextBlock Text="效果差上限" Margin="0,10,0,4" />
+                            <TextBox x:Name="TemplateEffectLimitTextBox" Text="1.0" />
+                            <Button Content="保存模板" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveTemplateButton_OnClick" />
+                        </StackPanel>
+                        <DataGrid x:Name="TemplateGrid"
+                                  Grid.Column="1"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="编号" Binding="{Binding TemplateCode}" Width="160" />
+                                <DataGridTextColumn Header="名称" Binding="{Binding TemplateName}" Width="180" />
+                                <DataGridTextColumn Header="公式" Binding="{Binding DeltaEFormula}" Width="100" />
+                                <DataGridTextColumn Header="综合色差上限" Binding="{Binding OverallUpperLimit}" Width="120" />
+                                <DataGridTextColumn Header="效果上限" Binding="{Binding EffectUpperLimit}" Width="120" />
+                                <DataGridCheckBoxColumn Header="默认" Binding="{Binding IsDefault}" Width="80" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="任务草稿">
+                    <Grid Margin="18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="说明：选中样品、标准样、模板中的任意记录后，点击顶部“生成任务草稿”即可写入任务表。" Foreground="#CBD5E1" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <DataGrid x:Name="TaskGrid"
+                                  Grid.Row="1"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  Background="#0F172A"
+                                  Foreground="White"
+                                  BorderBrush="#334155"
+                                  HeadersVisibility="Column"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="任务编号" Binding="{Binding TaskCode}" Width="220" />
+                                <DataGridTextColumn Header="仪器ID" Binding="{Binding InstrumentId}" Width="140" />
+                                <DataGridTextColumn Header="试样ID" Binding="{Binding SampleId}" Width="220" />
+                                <DataGridTextColumn Header="标准样ID" Binding="{Binding StandardSampleId}" Width="220" />
+                                <DataGridTextColumn Header="模板ID" Binding="{Binding TemplateId}" Width="220" />
+                                <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="测量记录">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="360" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,18,0">
+                            <StackPanel>
+                                <TextBlock Text="新增测量记录" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                                <TextBlock Text="任务编号" Margin="0,6,0,4" />
+                                <TextBox x:Name="RecordTaskCodeTextBox" />
+                                <TextBlock Text="记录序号" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordNoTextBox" Text="1" />
+                                <TextBlock Text="记录类型" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordTypeTextBox" Text="trial" />
+                                <TextBlock Text="综合色差" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordTotalDeltaETextBox" Text="0.68" />
+                                <TextBlock Text="效果差" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordTotalEffectDiffTextBox" Text="0.32" />
+                                <TextBlock Text="判定结果" Margin="0,10,0,4" />
+                                <ComboBox x:Name="RecordPassStatusComboBox" SelectedIndex="0">
+                                    <ComboBoxItem Content="Pass" />
+                                    <ComboBoxItem Content="Warning" />
+                                    <ComboBoxItem Content="Fail" />
+                                </ComboBox>
+                                <TextBlock Text="摘要说明" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordSummaryTextBox" Text="测量结果处于容差范围内。" TextWrapping="Wrap" AcceptsReturn="True" Height="60" />
+
+                                <Separator Margin="0,16,0,16" />
+                                <TextBlock Text="角度结果" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="角度代码" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordAngleCodeTextBox" Text="45as110" />
+                                <TextBlock Text="L*" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordCieLTextBox" Text="63.14" />
+                                <TextBlock Text="a*" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordCieATextBox" Text="-1.04" />
+                                <TextBlock Text="b*" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordCieBTextBox" Text="-3.18" />
+                                <TextBlock Text="角度色差 ΔE" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordAngleDeltaETextBox" Text="0.81" />
+
+                                <Separator Margin="0,16,0,16" />
+                                <TextBlock Text="效果结果" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="Sparkle" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordSparkleValueTextBox" Text="4.12" />
+                                <TextBlock Text="Sparkle 差值" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordSparkleDiffTextBox" Text="0.18" />
+                                <TextBlock Text="Graininess" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordGraininessValueTextBox" Text="2.06" />
+                                <TextBlock Text="Graininess 差值" Margin="0,10,0,4" />
+                                <TextBox x:Name="RecordGraininessDiffTextBox" Text="0.14" />
+                                <Button Content="保存测量记录" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveMeasurementRecordButton_OnClick" />
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2*" />
+                                <RowDefinition Height="1.2*" />
+                            </Grid.RowDefinitions>
+
+                            <DataGrid x:Name="MeasurementRecordGrid"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False"
+                                      SelectionChanged="MeasurementRecordGrid_OnSelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="任务ID" Binding="{Binding TaskId}" Width="220" />
+                                    <DataGridTextColumn Header="序号" Binding="{Binding RecordNo}" Width="70" />
+                                    <DataGridTextColumn Header="类型" Binding="{Binding RecordType}" Width="90" />
+                                    <DataGridTextColumn Header="综合色差" Binding="{Binding TotalDeltaE}" Width="100" />
+                                    <DataGridTextColumn Header="效果差" Binding="{Binding TotalEffectDiff}" Width="100" />
+                                    <DataGridTextColumn Header="判定" Binding="{Binding PassStatus}" Width="90" />
+                                    <DataGridTextColumn Header="测量时间" Binding="{Binding MeasuredAt}" Width="180" />
+                                    <DataGridTextColumn Header="摘要" Binding="{Binding ResultSummary}" Width="260" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Grid Grid.Row="1" Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <GroupBox Header="角度结果" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
+                                    <DataGrid x:Name="AngleResultGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              Background="#0F172A"
+                                              Foreground="White"
+                                              BorderBrush="#334155"
+                                              HeadersVisibility="Column"
+                                              CanUserAddRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="角度" Binding="{Binding AngleCode}" Width="100" />
+                                            <DataGridTextColumn Header="L*" Binding="{Binding CieL}" Width="70" />
+                                            <DataGridTextColumn Header="a*" Binding="{Binding CieA}" Width="70" />
+                                            <DataGridTextColumn Header="b*" Binding="{Binding CieB}" Width="70" />
+                                            <DataGridTextColumn Header="ΔE" Binding="{Binding DeltaE}" Width="70" />
+                                            <DataGridTextColumn Header="判定" Binding="{Binding PassStatus}" Width="80" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </GroupBox>
+                                <GroupBox Grid.Column="1" Header="效果结果" Margin="9,0,0,0" Foreground="White" BorderBrush="#334155">
+                                    <DataGrid x:Name="EffectResultGrid"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              Background="#0F172A"
+                                              Foreground="White"
+                                              BorderBrush="#334155"
+                                              HeadersVisibility="Column"
+                                              CanUserAddRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="角度" Binding="{Binding AngleCode}" Width="90" />
+                                            <DataGridTextColumn Header="Sparkle" Binding="{Binding SparkleValue}" Width="80" />
+                                            <DataGridTextColumn Header="差值" Binding="{Binding SparkleDiff}" Width="80" />
+                                            <DataGridTextColumn Header="Graininess" Binding="{Binding GraininessValue}" Width="90" />
+                                            <DataGridTextColumn Header="差值" Binding="{Binding GraininessDiff}" Width="80" />
+                                            <DataGridTextColumn Header="判定" Binding="{Binding EffectPassStatus}" Width="80" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </GroupBox>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <Border Grid.Row="3" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
+                <Grid Margin="18">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="运行日志" Foreground="White" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="运行日志" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
                     <TextBox x:Name="LogTextBox"
                              Grid.Row="1"
-                             Margin="0,16,0,0"
                              Background="#0F172A"
-                             Foreground="#D1FAE5"
-                             BorderBrush="#1E293B"
-                             FontFamily="Consolas"
-                             FontSize="14"
+                             Foreground="#E2E8F0"
+                             BorderBrush="#334155"
+                             IsReadOnly="True"
                              TextWrapping="Wrap"
-                             AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
-                             IsReadOnly="True" />
+                             AcceptsReturn="True" />
                 </Grid>
             </Border>
         </Grid>
 
         <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#0B1225">
-            <TextBlock Text="MAS V1 / 当前阶段：数据库初始化 + 主工作台接通" Foreground="#94A3B8" VerticalAlignment="Center" Margin="20,0" />
+            <TextBlock Text="MAS V1 / 当前阶段：数据库初始化 + 主数据录入 + 任务草稿写入 + 测量记录保存" Foreground="#94A3B8" VerticalAlignment="Center" Margin="20,0" />
         </Border>
     </Grid>
 </Window>
