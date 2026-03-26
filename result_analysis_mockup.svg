@@ -1,0 +1,79 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08111f"/>
+      <stop offset="100%" stop-color="#12324f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg4)"/>
+  <rect x="0" y="0" width="1440" height="74" fill="#09101f"/>
+  <text x="36" y="46" fill="#f8fafc" font-size="28" font-family="Segoe UI, Microsoft YaHei">Result Analysis</text>
+
+  <rect x="28" y="96" width="1384" height="120" rx="24" fill="#101b33" stroke="#334155"/>
+  <text x="56" y="138" fill="#f8fafc" font-size="30" font-family="Segoe UI, Microsoft YaHei">样品 SP-20260326-018 对比分析</text>
+  <text x="58" y="174" fill="#93c5fd" font-size="16" font-family="Segoe UI, Microsoft YaHei">标准样 STD-0008 | 公式 ΔE00 | 操作员 QC-01 | 测量时间 09:58:21</text>
+  <rect x="1172" y="120" width="92" height="42" rx="12" fill="#1d4ed8"/>
+  <rect x="1278" y="120" width="104" height="42" rx="12" fill="#14b8a6"/>
+  <text x="1218" y="147" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">切换公式</text>
+  <text x="1330" y="147" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">生成报告</text>
+
+  <rect x="28" y="240" width="500" height="620" rx="22" fill="#101b33" stroke="#334155"/>
+  <text x="56" y="278" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">角度明细</text>
+  <rect x="56" y="304" width="444" height="52" rx="12" fill="#14243f"/>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="14" fill="#93c5fd">
+    <text x="74" y="336">角度</text>
+    <text x="138" y="336">L*</text>
+    <text x="198" y="336">a*</text>
+    <text x="258" y="336">b*</text>
+    <text x="316" y="336">ΔE00</text>
+    <text x="386" y="336">Sparkle</text>
+    <text x="462" y="336">结果</text>
+  </g>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="14">
+    <rect x="56" y="370" width="444" height="48" rx="10" fill="#13203a"/>
+    <rect x="56" y="430" width="444" height="48" rx="10" fill="#13203a"/>
+    <rect x="56" y="490" width="444" height="48" rx="10" fill="#1f2937" stroke="#f59e0b"/>
+    <rect x="56" y="550" width="444" height="48" rx="10" fill="#2a1720" stroke="#ef4444"/>
+    <rect x="56" y="610" width="444" height="48" rx="10" fill="#13203a"/>
+    <text x="74" y="399" fill="#ffffff">45as15</text><text x="136" y="399" fill="#ffffff">52.12</text><text x="196" y="399" fill="#ffffff">0.42</text><text x="256" y="399" fill="#ffffff">-2.15</text><text x="316" y="399" fill="#86efac">0.62</text><text x="396" y="399" fill="#ffffff">4.8</text><text x="460" y="399" fill="#86efac">通过</text>
+    <text x="74" y="459" fill="#ffffff">45as25</text><text x="136" y="459" fill="#ffffff">50.98</text><text x="196" y="459" fill="#ffffff">0.55</text><text x="256" y="459" fill="#ffffff">-2.02</text><text x="316" y="459" fill="#86efac">0.71</text><text x="396" y="459" fill="#ffffff">5.1</text><text x="460" y="459" fill="#86efac">通过</text>
+    <text x="74" y="519" fill="#ffffff">45as45</text><text x="136" y="519" fill="#ffffff">48.74</text><text x="196" y="519" fill="#ffffff">0.61</text><text x="256" y="519" fill="#ffffff">-1.88</text><text x="316" y="519" fill="#fcd34d">0.96</text><text x="396" y="519" fill="#ffffff">5.5</text><text x="460" y="519" fill="#fcd34d">预警</text>
+    <text x="74" y="579" fill="#ffffff">45as75</text><text x="136" y="579" fill="#ffffff">46.13</text><text x="196" y="579" fill="#ffffff">0.72</text><text x="256" y="579" fill="#ffffff">-1.55</text><text x="316" y="579" fill="#fca5a5">1.24</text><text x="396" y="579" fill="#ffffff">6.2</text><text x="460" y="579" fill="#fca5a5">失败</text>
+    <text x="74" y="639" fill="#ffffff">45as110</text><text x="136" y="639" fill="#ffffff">43.56</text><text x="196" y="639" fill="#ffffff">0.81</text><text x="256" y="639" fill="#ffffff">-1.23</text><text x="316" y="639" fill="#86efac">0.83</text><text x="396" y="639" fill="#ffffff">5.0</text><text x="460" y="639" fill="#86efac">通过</text>
+  </g>
+  <rect x="56" y="694" width="444" height="134" rx="14" fill="#0f172a" stroke="#334155"/>
+  <text x="80" y="728" fill="#f8fafc" font-size="18" font-family="Segoe UI, Microsoft YaHei">判定摘要</text>
+  <text x="80" y="766" fill="#fca5a5" font-size="28" font-family="Segoe UI, Microsoft YaHei">不通过</text>
+  <text x="80" y="798" fill="#94a3b8" font-size="15" font-family="Segoe UI, Microsoft YaHei">45as75 超过颜色阈值 1.00，综合色差高于允许上限。</text>
+
+  <rect x="556" y="240" width="856" height="300" rx="22" fill="#101b33" stroke="#334155"/>
+  <text x="584" y="278" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">角度对比图</text>
+  <line x1="610" y1="494" x2="1360" y2="494" stroke="#334155" stroke-width="2"/>
+  <line x1="610" y1="322" x2="610" y2="494" stroke="#334155" stroke-width="2"/>
+  <polyline points="610,422 740,404 870,390 1000,362 1130,334 1260,382 1360,398" fill="none" stroke="#22d3ee" stroke-width="4"/>
+  <polyline points="610,442 740,438 870,426 1000,412 1130,358 1260,402 1360,430" fill="none" stroke="#f59e0b" stroke-width="4"/>
+  <text x="620" y="330" fill="#22d3ee" font-size="15" font-family="Segoe UI, Microsoft YaHei">样品曲线</text>
+  <text x="720" y="330" fill="#f59e0b" font-size="15" font-family="Segoe UI, Microsoft YaHei">标准曲线</text>
+  <g fill="#94a3b8" font-size="14" font-family="Segoe UI, Microsoft YaHei">
+    <text x="620" y="516">15</text><text x="748" y="516">25</text><text x="878" y="516">45</text><text x="1008" y="516">75</text><text x="1138" y="516">110</text>
+  </g>
+
+  <rect x="556" y="560" width="410" height="300" rx="22" fill="#101b33" stroke="#334155"/>
+  <text x="584" y="598" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">效果指标</text>
+  <rect x="602" y="634" width="146" height="154" rx="16" fill="#0f172a" stroke="#334155"/>
+  <rect x="770" y="634" width="146" height="154" rx="16" fill="#0f172a" stroke="#334155"/>
+  <text x="675" y="670" fill="#93c5fd" text-anchor="middle" font-size="18" font-family="Segoe UI, Microsoft YaHei">Sparkle</text>
+  <text x="675" y="742" fill="#ffffff" text-anchor="middle" font-size="40" font-family="Segoe UI, Microsoft YaHei">6.2</text>
+  <text x="843" y="670" fill="#93c5fd" text-anchor="middle" font-size="18" font-family="Segoe UI, Microsoft YaHei">Graininess</text>
+  <text x="843" y="742" fill="#ffffff" text-anchor="middle" font-size="40" font-family="Segoe UI, Microsoft YaHei">2.8</text>
+
+  <rect x="986" y="560" width="426" height="300" rx="22" fill="#101b33" stroke="#334155"/>
+  <text x="1014" y="598" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">超差原因</text>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="16">
+    <text x="1014" y="648" fill="#cbd5e1">1. 45as75 角度 ΔE00 = 1.24，超过阈值 1.00</text>
+    <text x="1014" y="688" fill="#cbd5e1">2. Sparkle 在中高角度波动明显，高于标准样</text>
+    <text x="1014" y="728" fill="#cbd5e1">3. 建议检查喷涂厚度与闪烁颗粒分布</text>
+    <rect x="1014" y="770" width="164" height="42" rx="12" fill="#14b8a6"/>
+    <text x="1096" y="797" fill="#ffffff" font-size="16" text-anchor="middle">导出分析快照</text>
+  </g>
+</svg>

@@ -1,0 +1,59 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#0f2942"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg2)"/>
+  <rect x="0" y="0" width="1440" height="74" fill="#09101f"/>
+  <text x="36" y="46" fill="#f8fafc" font-size="28" font-family="Segoe UI, Microsoft YaHei">Instrument Connection</text>
+
+  <rect x="28" y="96" width="1384" height="776" rx="24" fill="#0b1220" stroke="#334155"/>
+  <rect x="56" y="124" width="1328" height="64" rx="16" fill="#101a2e" stroke="#334155"/>
+  <rect x="82" y="140" width="140" height="34" rx="10" fill="#14b8a6"/>
+  <rect x="240" y="140" width="124" height="34" rx="10" fill="#1e293b"/>
+  <rect x="382" y="140" width="146" height="34" rx="10" fill="#1e293b"/>
+  <text x="122" y="162" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">扫描端口</text>
+  <text x="302" y="162" fill="#cbd5e1" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">自动连接</text>
+  <text x="455" y="162" fill="#cbd5e1" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">刷新: 3 秒</text>
+
+  <rect x="56" y="214" width="520" height="538" rx="18" fill="#0f1a30" stroke="#334155"/>
+  <text x="84" y="252" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">设备列表</text>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="15">
+    <rect x="84" y="278" width="464" height="68" rx="12" fill="#123154" stroke="#22d3ee"/>
+    <rect x="84" y="360" width="464" height="68" rx="12" fill="#13203a"/>
+    <rect x="84" y="442" width="464" height="68" rx="12" fill="#13203a"/>
+    <text x="104" y="307" fill="#ffffff">COM5    MAS-6A    驱动正常    当前可用</text>
+    <text x="104" y="329" fill="#86efac">已识别 / 建议连接</text>
+    <text x="104" y="389" fill="#ffffff">COM7    USB Serial    驱动正常    未识别</text>
+    <text x="104" y="471" fill="#ffffff">COM8    Unknown Device    驱动异常</text>
+  </g>
+
+  <rect x="602" y="214" width="782" height="330" rx="18" fill="#0f1a30" stroke="#334155"/>
+  <text x="630" y="252" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">设备详情</text>
+  <text x="630" y="304" fill="#93c5fd" font-size="17" font-family="Segoe UI, Microsoft YaHei">型号</text>
+  <text x="760" y="304" fill="#ffffff" font-size="22" font-family="Segoe UI, Microsoft YaHei">MAS-6A Multi-Angle Spectro</text>
+  <text x="630" y="348" fill="#93c5fd" font-size="17" font-family="Segoe UI, Microsoft YaHei">序列号</text>
+  <text x="760" y="348" fill="#ffffff" font-size="22" font-family="Segoe UI, Microsoft YaHei">SN-MAS-202603-017</text>
+  <text x="630" y="392" fill="#93c5fd" font-size="17" font-family="Segoe UI, Microsoft YaHei">固件版本</text>
+  <text x="760" y="392" fill="#ffffff" font-size="22" font-family="Segoe UI, Microsoft YaHei">v1.8.12</text>
+  <text x="630" y="436" fill="#93c5fd" font-size="17" font-family="Segoe UI, Microsoft YaHei">连接状态</text>
+  <text x="760" y="436" fill="#22c55e" font-size="22" font-family="Segoe UI, Microsoft YaHei">已连接 / COM5</text>
+  <rect x="1060" y="272" width="120" height="42" rx="12" fill="#14b8a6"/>
+  <rect x="1196" y="272" width="120" height="42" rx="12" fill="#334155"/>
+  <rect x="1060" y="330" width="256" height="42" rx="12" fill="#0ea5e9"/>
+  <text x="1120" y="300" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">连接</text>
+  <text x="1256" y="300" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">断开</text>
+  <text x="1188" y="358" fill="#ffffff" font-size="16" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei">进入校准向导</text>
+
+  <rect x="602" y="570" width="782" height="282" rx="18" fill="#0f1a30" stroke="#334155"/>
+  <text x="630" y="608" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">通信日志</text>
+  <g font-family="Consolas, Segoe UI" font-size="15">
+    <text x="630" y="650" fill="#cbd5e1">09:52:11  INFO   ScanPorts          Found COM5 / COM7 / COM8</text>
+    <text x="630" y="686" fill="#86efac">09:52:14  INFO   InstrumentService  MAS-6A identified on COM5</text>
+    <text x="630" y="722" fill="#86efac">09:52:15  INFO   InstrumentService  Connection established</text>
+    <text x="630" y="758" fill="#fcd34d">09:52:18  WARN   Calibration        Calibration due in 35 minutes</text>
+    <text x="630" y="794" fill="#fca5a5">09:52:24  ERROR  COM7               Device handshake timeout</text>
+  </g>
+</svg>

@@ -1,0 +1,31 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Dotnet / NuGet local workspace caches
+.dotnet/
+.appdata/
+.localappdata/
+.nugetpackages/
+
+# Logs
+*.log
+
+# Temp / lock files
+~$*
+*.tmp
+*.cache
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Optional local databases generated during development
+MAS.Tools/bin/Debug/net8.0/Data/

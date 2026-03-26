@@ -1,0 +1,89 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#172554"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14213d"/>
+      <stop offset="100%" stop-color="#1f3a5f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1440" height="74" fill="#0b1225"/>
+  <text x="36" y="46" fill="#f8fafc" font-size="28" font-family="Segoe UI, Microsoft YaHei">MAS QC Workstation</text>
+  <text x="1210" y="31" fill="#93c5fd" font-size="15" font-family="Segoe UI, Microsoft YaHei">Operator: QC-01</text>
+  <text x="1210" y="54" fill="#cbd5e1" font-size="15" font-family="Segoe UI, Microsoft YaHei">2026-03-26 09:55</text>
+
+  <rect x="24" y="96" width="220" height="760" rx="18" fill="#0b1225" stroke="#1e293b"/>
+  <text x="52" y="136" fill="#38bdf8" font-size="16" font-family="Segoe UI, Microsoft YaHei">导航 Navigation</text>
+  <g font-size="18" font-family="Segoe UI, Microsoft YaHei" fill="#e2e8f0">
+    <rect x="40" y="156" width="188" height="46" rx="12" fill="#0f766e"/>
+    <text x="66" y="186" fill="#ffffff">首页 Dashboard</text>
+    <text x="66" y="236">仪器连接</text>
+    <text x="66" y="286">测量中心</text>
+    <text x="66" y="336">结果分析</text>
+    <text x="66" y="386">样品管理</text>
+    <text x="66" y="436">颜色库</text>
+    <text x="66" y="486">容差设置</text>
+    <text x="66" y="536">报告中心</text>
+    <text x="66" y="586">系统设置</text>
+  </g>
+
+  <rect x="272" y="96" width="1138" height="760" rx="24" fill="#0f172a" stroke="#334155"/>
+  <text x="308" y="138" fill="#f8fafc" font-size="34" font-family="Segoe UI, Microsoft YaHei">质量监控总览</text>
+  <text x="309" y="168" fill="#94a3b8" font-size="16" font-family="Segoe UI, Microsoft YaHei">多角度测色仪当前状态、近期任务与快捷操作</text>
+
+  <rect x="304" y="198" width="250" height="150" rx="20" fill="url(#panel)" stroke="#334155"/>
+  <rect x="580" y="198" width="250" height="150" rx="20" fill="url(#panel)" stroke="#334155"/>
+  <rect x="856" y="198" width="250" height="150" rx="20" fill="url(#panel)" stroke="#334155"/>
+  <rect x="1132" y="198" width="242" height="150" rx="20" fill="url(#panel)" stroke="#334155"/>
+
+  <text x="332" y="234" fill="#93c5fd" font-size="16" font-family="Segoe UI, Microsoft YaHei">设备状态</text>
+  <text x="332" y="292" fill="#ffffff" font-size="38" font-family="Segoe UI, Microsoft YaHei">已连接</text>
+  <text x="332" y="323" fill="#86efac" font-size="16" font-family="Segoe UI, Microsoft YaHei">MAS-6A / COM5</text>
+
+  <text x="608" y="234" fill="#93c5fd" font-size="16" font-family="Segoe UI, Microsoft YaHei">校准状态</text>
+  <text x="608" y="292" fill="#ffffff" font-size="38" font-family="Segoe UI, Microsoft YaHei">有效</text>
+  <text x="608" y="323" fill="#fcd34d" font-size="16" font-family="Segoe UI, Microsoft YaHei">下次校准 10:30</text>
+
+  <text x="884" y="234" fill="#93c5fd" font-size="16" font-family="Segoe UI, Microsoft YaHei">今日任务</text>
+  <text x="884" y="292" fill="#ffffff" font-size="38" font-family="Segoe UI, Microsoft YaHei">24</text>
+  <text x="884" y="323" fill="#cbd5e1" font-size="16" font-family="Segoe UI, Microsoft YaHei">18 合格 / 4 预警 / 2 失败</text>
+
+  <text x="1160" y="234" fill="#93c5fd" font-size="16" font-family="Segoe UI, Microsoft YaHei">系统告警</text>
+  <text x="1160" y="292" fill="#ffffff" font-size="38" font-family="Segoe UI, Microsoft YaHei">2</text>
+  <text x="1160" y="323" fill="#fca5a5" font-size="16" font-family="Segoe UI, Microsoft YaHei">1 个端口重连, 1 个超差</text>
+
+  <rect x="304" y="382" width="520" height="184" rx="20" fill="#101b33" stroke="#334155"/>
+  <text x="332" y="420" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">快捷操作</text>
+  <rect x="332" y="450" width="140" height="52" rx="14" fill="#14b8a6"/>
+  <rect x="490" y="450" width="140" height="52" rx="14" fill="#0ea5e9"/>
+  <rect x="648" y="450" width="140" height="52" rx="14" fill="#f59e0b"/>
+  <text x="367" y="483" fill="#ffffff" font-size="18" font-family="Segoe UI, Microsoft YaHei">连接设备</text>
+  <text x="525" y="483" fill="#ffffff" font-size="18" font-family="Segoe UI, Microsoft YaHei">开始测量</text>
+  <text x="682" y="483" fill="#ffffff" font-size="18" font-family="Segoe UI, Microsoft YaHei">生成报告</text>
+  <text x="332" y="534" fill="#94a3b8" font-size="16" font-family="Segoe UI, Microsoft YaHei">适合生产现场的卡片式工作台，优先保证主流程触达效率。</text>
+
+  <rect x="850" y="382" width="524" height="438" rx="20" fill="#101b33" stroke="#334155"/>
+  <text x="878" y="420" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">最近任务</text>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="16">
+    <rect x="878" y="446" width="468" height="56" rx="12" fill="#132444"/>
+    <rect x="878" y="514" width="468" height="56" rx="12" fill="#132444"/>
+    <rect x="878" y="582" width="468" height="56" rx="12" fill="#132444"/>
+    <rect x="878" y="650" width="468" height="56" rx="12" fill="#132444"/>
+    <rect x="878" y="718" width="468" height="56" rx="12" fill="#132444"/>
+    <text x="904" y="480" fill="#ffffff">TASK-20260326-001 / 银粉灰面板 / 结果: 合格</text>
+    <text x="904" y="548" fill="#ffffff">TASK-20260326-002 / 珠光蓝饰件 / 结果: 预警</text>
+    <text x="904" y="616" fill="#ffffff">TASK-20260326-003 / 哑黑塑件 / 结果: 合格</text>
+    <text x="904" y="684" fill="#ffffff">TASK-20260326-004 / 金属红试样 / 结果: 失败</text>
+    <text x="904" y="752" fill="#ffffff">TASK-20260326-005 / 标准样复测 / 结果: 合格</text>
+  </g>
+
+  <rect x="304" y="592" width="520" height="228" rx="20" fill="#101b33" stroke="#334155"/>
+  <text x="332" y="630" fill="#f8fafc" font-size="24" font-family="Segoe UI, Microsoft YaHei">趋势速览</text>
+  <polyline points="344,760 412,724 480,735 548,676 616,694 684,648 752,616 800,594" fill="none" stroke="#22d3ee" stroke-width="4"/>
+  <line x1="344" y1="780" x2="800" y2="780" stroke="#334155" stroke-width="2"/>
+  <line x1="344" y1="780" x2="344" y2="646" stroke="#334155" stroke-width="2"/>
+  <text x="332" y="804" fill="#94a3b8" font-size="14" font-family="Segoe UI, Microsoft YaHei">综合色差走势（最近 8 个批次）</text>
+</svg>
