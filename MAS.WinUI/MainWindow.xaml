@@ -420,8 +420,9 @@
                         <Grid Grid.Column="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="2*" />
-                                <RowDefinition Height="1.2*" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="1.55*" />
+                                <RowDefinition Height="1.05*" />
                             </Grid.RowDefinitions>
 
                             <WrapPanel Margin="0,0,0,12">
@@ -437,8 +438,27 @@
                                 <Button Content="清空" Width="70" Height="34" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearRecordFilterButton_OnClick" />
                             </WrapPanel>
 
+                            <Grid Grid.Row="1" Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <GroupBox Header="任务上下文" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
+                                    <StackPanel Margin="12">
+                                        <TextBlock x:Name="TaskContextTextBlock" Text="请选择任务查看上下文。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                        <TextBlock x:Name="TaskBindingTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </GroupBox>
+                                <GroupBox Grid.Column="1" Header="测量分析摘要" Margin="9,0,0,0" Foreground="White" BorderBrush="#334155">
+                                    <StackPanel Margin="12">
+                                        <TextBlock x:Name="MeasurementOverviewTextBlock" Text="请选择记录查看分析摘要。" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                        <TextBlock x:Name="MeasurementDetailTextBlock" Text="-" Foreground="#94A3B8" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </GroupBox>
+                            </Grid>
+
                             <DataGrid x:Name="MeasurementRecordGrid"
-                                      Grid.Row="1"
+                                      Grid.Row="2"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       Background="#0F172A"
@@ -459,7 +479,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <Grid Grid.Row="2" Margin="0,18,0,0">
+                            <Grid Grid.Row="3" Margin="0,18,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
@@ -616,6 +636,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 

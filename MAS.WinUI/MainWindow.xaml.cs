@@ -255,7 +255,7 @@ public partial class MainWindow : Window
 
         await _taskRepository.AddAsync(task);
         await WriteOperationLogAsync("task", "create", "success", $"创建任务草稿 {task.TaskCode}", task.Id);
-        SelectTask(task);
+        await SelectTaskAsync(task);
         AppendLog($"已创建任务草稿: {task.TaskCode}");
         await RefreshAllDataAsync();
     }
@@ -448,7 +448,7 @@ public partial class MainWindow : Window
     {
         if (TaskGrid.SelectedItem is MeasurementTask task)
         {
-            SelectTask(task);
+            await SelectTaskAsync(task);
             var records = await _measurementRecordRepository.GetByTaskIdAsync(task.Id);
             MeasurementRecordGrid.ItemsSource = records;
             var latestRecord = records.FirstOrDefault();
@@ -534,7 +534,7 @@ public partial class MainWindow : Window
         {
             var result = await _workflowService.ExecuteMeasurementAsync(taskCode, recordType);
             await WriteOperationLogAsync("measurement", recordType, "success", $"{displayName}测量完成", result.Task.Id, result.Record.Id);
-            SelectTask(result.Task);
+            await SelectTaskAsync(result.Task);
             ApplyRecordToInputs(result.Record, result.AngleResults.FirstOrDefault(), result.EffectResults.FirstOrDefault());
             AppendLog($"{displayName}测量完成: {result.Task.TaskCode} / 记录 {result.Record.RecordNo}");
             await RefreshAllDataAsync(result.Record.Id);
@@ -611,7 +611,11 @@ public partial class MainWindow : Window
         var latestTask = tasks.LastOrDefault();
         if (latestTask is not null)
         {
-            SelectTask(latestTask);
+            await SelectTaskAsync(latestTask);
+        }
+        else
+        {
+            ClearTaskSummary();
         }
 
         var selectedRecord = selectedRecordId is null
@@ -627,6 +631,7 @@ public partial class MainWindow : Window
         {
             AngleResultGrid.ItemsSource = Array.Empty<MeasurementAngleResult>();
             EffectResultGrid.ItemsSource = Array.Empty<MeasurementEffectResult>();
+            ClearMeasurementSummary();
         }
 
         var selectedReport = selectedReportId is null
@@ -666,8 +671,21 @@ public partial class MainWindow : Window
 
     private async Task LoadMeasurementDetailsAsync(string recordId)
     {
-        AngleResultGrid.ItemsSource = await _angleResultRepository.GetByRecordIdAsync(recordId);
-        EffectResultGrid.ItemsSource = await _effectResultRepository.GetByRecordIdAsync(recordId);
+        var angleResults = await _angleResultRepository.GetByRecordIdAsync(recordId);
+        var effectResults = await _effectResultRepository.GetByRecordIdAsync(recordId);
+
+        AngleResultGrid.ItemsSource = angleResults;
+        EffectResultGrid.ItemsSource = effectResults;
+
+        var record = _allMeasurementRecords.FirstOrDefault(x => x.Id == recordId) ?? await _measurementRecordRepository.GetByIdAsync(recordId);
+        if (record is not null)
+        {
+            await LoadMeasurementSummaryAsync(record, angleResults, effectResults);
+        }
+        else
+        {
+            ClearMeasurementSummary();
+        }
     }
 
     private void LoadReportPreview(ReportExport? export)
@@ -698,6 +716,43 @@ public partial class MainWindow : Window
         ReportPreviewTextBox.Text = string.Empty;
     }
 
+    private async Task LoadTaskSummaryAsync(MeasurementTask task)
+    {
+        var instrument = await _instrumentRepository.GetByIdAsync(task.InstrumentId);
+        var sample = string.IsNullOrWhiteSpace(task.SampleId) ? null : await _sampleRepository.GetByIdAsync(task.SampleId);
+        var standard = string.IsNullOrWhiteSpace(task.StandardSampleId) ? null : await _standardSampleRepository.GetByIdAsync(task.StandardSampleId);
+        var template = string.IsNullOrWhiteSpace(task.TemplateId) ? null : await _templateRepository.GetByIdAsync(task.TemplateId);
+        var taskRecords = _allMeasurementRecords.Where(x => x.TaskId == task.Id).OrderByDescending(x => x.MeasuredAt).ToList();
+        var latestRecord = taskRecords.FirstOrDefault();
+
+        TaskContextTextBlock.Text = $"任务 {task.TaskCode} 当前状态为 {task.Status}，绑定仪器 {(instrument?.InstrumentName ?? task.InstrumentId)}，累计记录 {taskRecords.Count} 条。";
+        TaskBindingTextBlock.Text = $"试样: {(sample is null ? (task.SampleId ?? "未绑定") : $"{sample.SampleCode} / {sample.SampleName}")} | 标准样: {(standard is null ? (task.StandardSampleId ?? "未绑定") : $"{standard.StandardCode} / {standard.StandardName}")} | 模板: {(template is null ? (task.TemplateId ?? "未绑定") : $"{template.TemplateCode} / {template.TemplateName}")} | 最近测量: {(latestRecord is null ? "暂无" : $"{latestRecord.RecordType} / {latestRecord.PassStatus} / ΔE {latestRecord.TotalDeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}")}";
+    }
+
+    private async Task LoadMeasurementSummaryAsync(MeasurementRecord record, IReadOnlyList<MeasurementAngleResult> angleResults, IReadOnlyList<MeasurementEffectResult> effectResults)
+    {
+        var task = _allTasks.FirstOrDefault(x => x.Id == record.TaskId) ?? await _taskRepository.GetByIdAsync(record.TaskId);
+        var maxAngleDelta = angleResults.Where(x => x.DeltaE.HasValue).Select(x => x.DeltaE!.Value).DefaultIfEmpty().Max();
+        var avgAngleDelta = angleResults.Where(x => x.DeltaE.HasValue).Select(x => x.DeltaE!.Value).DefaultIfEmpty().Average();
+        var maxSparkleDiff = effectResults.Where(x => x.SparkleDiff.HasValue).Select(x => x.SparkleDiff!.Value).DefaultIfEmpty().Max();
+        var maxGraininessDiff = effectResults.Where(x => x.GraininessDiff.HasValue).Select(x => x.GraininessDiff!.Value).DefaultIfEmpty().Max();
+
+        MeasurementOverviewTextBlock.Text = $"记录 #{record.RecordNo} / {record.RecordType} / 判定 {record.PassStatus} / 所属任务 {(task?.TaskCode ?? record.TaskId)} / 总 ΔE {record.TotalDeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"} / 效果差 {record.TotalEffectDiff?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-"}";
+        MeasurementDetailTextBlock.Text = $"测量时间: {record.MeasuredAt:yyyy-MM-dd HH:mm:ss} | 角度结果: {angleResults.Count} 条，最大 ΔE {maxAngleDelta:0.00}，平均 ΔE {avgAngleDelta:0.00} | 效果结果: {effectResults.Count} 条，最大 Sparkle 差 {maxSparkleDiff:0.00}，最大 Graininess 差 {maxGraininessDiff:0.00} | 摘要: {(string.IsNullOrWhiteSpace(record.ResultSummary) ? "-" : record.ResultSummary)}";
+    }
+
+    private void ClearTaskSummary()
+    {
+        TaskContextTextBlock.Text = "请选择任务查看上下文。";
+        TaskBindingTextBlock.Text = "-";
+    }
+
+    private void ClearMeasurementSummary()
+    {
+        MeasurementOverviewTextBlock.Text = "请选择记录查看分析摘要。";
+        MeasurementDetailTextBlock.Text = "-";
+    }
+
     private void SelectInstrument(Instrument instrument)
     {
         InstrumentNameTextBox.Text = instrument.InstrumentName;
@@ -707,11 +762,12 @@ public partial class MainWindow : Window
         InstrumentStatusTextBox.Text = instrument.Status;
     }
 
-    private void SelectTask(MeasurementTask task)
+    private async Task SelectTaskAsync(MeasurementTask task)
     {
         TaskCodeText.Text = task.TaskCode;
         TaskStatusText.Text = $"任务状态: {task.Status}";
         RecordTaskCodeTextBox.Text = task.TaskCode;
+        await LoadTaskSummaryAsync(task);
     }
 
     private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResult? angle, MeasurementEffectResult? effect)
@@ -838,5 +894,10 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
+
+
 
 
