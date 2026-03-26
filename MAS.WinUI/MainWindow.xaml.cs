@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
 using MAS.Application.Services;
@@ -108,6 +109,105 @@ public partial class MainWindow : Window
     {
         await LoadSettingsAsync();
         AppendLog("系统设置已重新加载。");
+    }
+
+    private async void BackupDataButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await EnsureDatabaseReadyAsync();
+        try
+        {
+            var backupFolder = GetBackupFolderPath();
+            Directory.CreateDirectory(backupFolder);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            var databaseBackupPath = Path.Combine(backupFolder, $"MASQC_backup_{timestamp}.db");
+            var settingsBackupPath = Path.Combine(backupFolder, $"appsettings_backup_{timestamp}.json");
+
+            File.Copy(_bootstrapper.DatabasePath, databaseBackupPath, overwrite: true);
+            if (File.Exists(_appSettingsStore.SettingsPath))
+            {
+                File.Copy(_appSettingsStore.SettingsPath, settingsBackupPath, overwrite: true);
+            }
+
+            AppendLog($"数据备份已生成: {databaseBackupPath}");
+            MessageBox.Show(this, $"数据备份完成。\n{databaseBackupPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"数据备份失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void ExportDiagnosticsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await EnsureDatabaseReadyAsync();
+        try
+        {
+            var diagnosticsFolder = GetDiagnosticsFolderPath();
+            Directory.CreateDirectory(diagnosticsFolder);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            var tempFolder = Path.Combine(diagnosticsFolder, $"diagnostics_{timestamp}");
+            Directory.CreateDirectory(tempFolder);
+
+            var summaryPath = Path.Combine(tempFolder, "summary.txt");
+            var summaryLines = new[]
+            {
+                "MAS V1 Diagnostics",
+                $"GeneratedAt: {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                $"DatabasePath: {_bootstrapper.DatabasePath}",
+                $"SettingsPath: {_appSettingsStore.SettingsPath}",
+                $"TaskCount: {_allTasks.Count}",
+                $"RecordCount: {_allMeasurementRecords.Count}",
+                $"ReportCount: {_allReportExports.Count}",
+                $"LogCount: {_allOperationLogs.Count}",
+            };
+            File.WriteAllLines(summaryPath, summaryLines);
+
+            if (File.Exists(_bootstrapper.DatabasePath))
+            {
+                File.Copy(_bootstrapper.DatabasePath, Path.Combine(tempFolder, "MASQC.db"), overwrite: true);
+            }
+
+            if (File.Exists(_appSettingsStore.SettingsPath))
+            {
+                File.Copy(_appSettingsStore.SettingsPath, Path.Combine(tempFolder, "appsettings.json"), overwrite: true);
+            }
+
+            File.WriteAllText(Path.Combine(tempFolder, "runtime-log.txt"), LogTextBox.Text);
+
+            var zipPath = Path.Combine(diagnosticsFolder, $"MAS_diagnostics_{timestamp}.zip");
+            if (File.Exists(zipPath))
+            {
+                File.Delete(zipPath);
+            }
+
+            ZipFile.CreateFromDirectory(tempFolder, zipPath);
+            Directory.Delete(tempFolder, recursive: true);
+
+            AppendLog($"诊断包已导出: {zipPath}");
+            MessageBox.Show(this, $"诊断包导出完成。\n{zipPath}", "系统设置", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"诊断包导出失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OpenDataFolderButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = GetDataFolderPath();
+            Directory.CreateDirectory(folder);
+            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            AppendLog($"已打开数据目录: {folder}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"打开数据目录失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "系统设置", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async void ConnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
@@ -1181,6 +1281,20 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         });
     }
 
+    private static string GetDataFolderPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "Data");
+    }
+
+    private static string GetBackupFolderPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "Exports", "Backups");
+    }
+
+    private static string GetDiagnosticsFolderPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "Exports", "Diagnostics");
+    }
     private static string GetReportFolderPath()
     {
         return Path.Combine(AppContext.BaseDirectory, "Exports", "Reports");
@@ -1255,6 +1369,9 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
 
 
 
