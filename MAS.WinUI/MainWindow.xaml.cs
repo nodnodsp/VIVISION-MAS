@@ -15,6 +15,8 @@ public partial class MainWindow : Window
 {
     private readonly SqliteScriptBootstrapper _bootstrapper = new();
     private readonly MeasurementTaskService _taskService = new();
+    private readonly SqliteInstrumentRepository _instrumentRepository = new();
+    private readonly SqliteCalibrationRecordRepository _calibrationRecordRepository = new();
     private readonly SqliteSampleRepository _sampleRepository = new();
     private readonly SqliteStandardSampleRepository _standardSampleRepository = new();
     private readonly SqliteToleranceTemplateRepository _templateRepository = new();
@@ -22,9 +24,22 @@ public partial class MainWindow : Window
     private readonly SqliteMeasurementRecordRepository _measurementRecordRepository = new();
     private readonly SqliteMeasurementAngleResultRepository _angleResultRepository = new();
     private readonly SqliteMeasurementEffectResultRepository _effectResultRepository = new();
+    private readonly MeasurementWorkflowService _workflowService;
+    private readonly SimulatedInstrumentConnectionService _instrumentConnectionService;
 
     public MainWindow()
     {
+        _instrumentConnectionService = new SimulatedInstrumentConnectionService(
+            _instrumentRepository,
+            _calibrationRecordRepository);
+
+        _workflowService = new MeasurementWorkflowService(
+            _taskRepository,
+            _measurementRecordRepository,
+            _angleResultRepository,
+            _effectResultRepository,
+            new SimulatedInstrumentMeasurementService());
+
         InitializeComponent();
         DatabasePathText.Text = _bootstrapper.DatabasePath;
         AppendLog("应用已启动。准备加载数据库状态。");
@@ -46,6 +61,35 @@ public partial class MainWindow : Window
     {
         await RefreshAllDataAsync();
         AppendLog("主数据与测量记录已刷新。");
+    }
+
+    private async void ConnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ChangeInstrumentConnectionAsync(true);
+    }
+
+    private async void DisconnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ChangeInstrumentConnectionAsync(false);
+    }
+
+    private async void WhiteCalibrationButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await CalibrateInstrumentAsync("white");
+    }
+
+    private async void BlackCalibrationButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await CalibrateInstrumentAsync("black");
+    }
+
+    private async void InstrumentGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (InstrumentGrid.SelectedItem is Instrument instrument)
+        {
+            SelectInstrument(instrument);
+            CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(instrument.Id);
+        }
     }
 
     private async void SaveSampleButton_OnClick(object sender, RoutedEventArgs e)
@@ -189,21 +233,27 @@ public partial class MainWindow : Window
             templateId: template.Id);
 
         await _taskRepository.AddAsync(task);
-        TaskCodeText.Text = task.TaskCode;
-        RecordTaskCodeTextBox.Text = task.TaskCode;
+        SelectTask(task);
         AppendLog($"已创建任务草稿: {task.TaskCode}");
         await RefreshAllDataAsync();
+    }
+
+    private async void ExecuteStandardMeasurementButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ExecuteWorkflowMeasurementAsync("standard", "标准样");
+    }
+
+    private async void ExecuteTrialMeasurementButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ExecuteWorkflowMeasurementAsync("trial", "试样");
     }
 
     private async void SaveMeasurementRecordButton_OnClick(object sender, RoutedEventArgs e)
     {
         await EnsureDatabaseReadyAsync();
 
-        var taskCode = string.IsNullOrWhiteSpace(RecordTaskCodeTextBox.Text)
-            ? (TaskGrid.SelectedItem as MeasurementTask)?.TaskCode
-            : RecordTaskCodeTextBox.Text.Trim();
-
-        if (string.IsNullOrWhiteSpace(taskCode))
+        var taskCode = await ResolveTaskCodeAsync();
+        if (taskCode is null)
         {
             MessageBox.Show(this, "请先填写或选择任务编号。", "保存测量记录", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -239,7 +289,6 @@ public partial class MainWindow : Window
 
         var passStatus = GetSelectedPassStatus();
         var angleCode = string.IsNullOrWhiteSpace(RecordAngleCodeTextBox.Text) ? "45as110" : RecordAngleCodeTextBox.Text.Trim();
-
         var record = new MeasurementRecord
         {
             TaskId = task.Id,
@@ -280,8 +329,24 @@ public partial class MainWindow : Window
             },
         });
 
-        AppendLog($"已保存测量记录: Task={taskCode}, RecordNo={record.RecordNo}");
-        await RefreshAllDataAsync(selectedRecordId: record.Id);
+        AppendLog($"已保存手工记录: Task={taskCode}, RecordNo={record.RecordNo}");
+        await RefreshAllDataAsync(record.Id);
+    }
+
+    private async void TaskGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TaskGrid.SelectedItem is MeasurementTask task)
+        {
+            SelectTask(task);
+            var records = await _measurementRecordRepository.GetByTaskIdAsync(task.Id);
+            MeasurementRecordGrid.ItemsSource = records;
+            var latestRecord = records.FirstOrDefault();
+            MeasurementRecordGrid.SelectedItem = latestRecord;
+            if (latestRecord is not null)
+            {
+                await LoadMeasurementDetailsAsync(latestRecord.Id);
+            }
+        }
     }
 
     private async void MeasurementRecordGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -298,17 +363,88 @@ public partial class MainWindow : Window
         {
             var folder = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "MAS.Infrastructure", "Database", "Schema");
             var fullPath = Path.GetFullPath(folder);
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = fullPath,
-                UseShellExecute = true,
-            });
+            Process.Start(new ProcessStartInfo { FileName = fullPath, UseShellExecute = true });
             AppendLog($"已打开建表脚本目录: {fullPath}");
         }
         catch (Exception ex)
         {
             AppendLog($"打开建表脚本目录失败: {ex.Message}");
         }
+    }
+
+    private async Task ChangeInstrumentConnectionAsync(bool connect)
+    {
+        await EnsureDatabaseReadyAsync();
+        var instrument = InstrumentGrid.SelectedItem as Instrument ?? await _instrumentRepository.GetDefaultAsync();
+        if (instrument is null)
+        {
+            MessageBox.Show(this, "未找到可用仪器。", "仪器连接", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var updated = connect
+            ? await _instrumentConnectionService.ConnectAsync(instrument.Id)
+            : await _instrumentConnectionService.DisconnectAsync(instrument.Id);
+        SelectInstrument(updated);
+        AppendLog(connect ? $"仪器已连接: {updated.InstrumentCode}" : $"仪器已断开: {updated.InstrumentCode}");
+        await RefreshAllDataAsync();
+    }
+
+    private async Task CalibrateInstrumentAsync(string calibrationType)
+    {
+        await EnsureDatabaseReadyAsync();
+        var instrument = InstrumentGrid.SelectedItem as Instrument ?? await _instrumentRepository.GetDefaultAsync();
+        if (instrument is null)
+        {
+            MessageBox.Show(this, "未找到可用仪器。", "仪器校准", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var record = await _instrumentConnectionService.CalibrateAsync(instrument.Id, calibrationType);
+        AppendLog($"{(calibrationType == "white" ? "白板" : "黑腔")}校准完成: {instrument.InstrumentCode}");
+        await RefreshAllDataAsync();
+        CalibrationRecordGrid.ItemsSource = await _calibrationRecordRepository.GetByInstrumentIdAsync(record.InstrumentId);
+    }
+
+    private async Task ExecuteWorkflowMeasurementAsync(string recordType, string displayName)
+    {
+        await EnsureDatabaseReadyAsync();
+
+        var taskCode = await ResolveTaskCodeAsync();
+        if (taskCode is null)
+        {
+            MessageBox.Show(this, "请先创建或选择任务草稿。", $"执行{displayName}测量", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var result = await _workflowService.ExecuteMeasurementAsync(taskCode, recordType);
+            SelectTask(result.Task);
+            ApplyRecordToInputs(result.Record, result.AngleResults.FirstOrDefault(), result.EffectResults.FirstOrDefault());
+            AppendLog($"{displayName}测量完成: {result.Task.TaskCode} / 记录 {result.Record.RecordNo}");
+            await RefreshAllDataAsync(result.Record.Id);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"{displayName}测量失败: {ex.Message}");
+            MessageBox.Show(this, ex.Message, $"执行{displayName}测量", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task<string?> ResolveTaskCodeAsync()
+    {
+        var taskCode = string.IsNullOrWhiteSpace(RecordTaskCodeTextBox.Text)
+            ? (TaskGrid.SelectedItem as MeasurementTask)?.TaskCode
+            : RecordTaskCodeTextBox.Text.Trim();
+
+        if (!string.IsNullOrWhiteSpace(taskCode))
+        {
+            return taskCode;
+        }
+
+        var latestTask = (await _taskRepository.GetAllAsync()).LastOrDefault();
+        return latestTask?.TaskCode;
     }
 
     private async Task EnsureDatabaseReadyAsync(bool forceLog = false)
@@ -325,26 +461,32 @@ public partial class MainWindow : Window
 
     private async Task RefreshAllDataAsync(string? selectedRecordId = null)
     {
+        var instruments = await _instrumentRepository.GetAllAsync();
+        var calibrationRecords = await _calibrationRecordRepository.GetAllAsync();
         var samples = await _sampleRepository.GetAllAsync();
         var standards = await _standardSampleRepository.GetAllAsync();
         var templates = await _templateRepository.GetAllAsync();
         var tasks = await _taskRepository.GetAllAsync();
         var records = await _measurementRecordRepository.GetAllAsync();
 
+        InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = samples;
         StandardSampleGrid.ItemsSource = standards;
         TemplateGrid.ItemsSource = templates;
         TaskGrid.ItemsSource = tasks;
         MeasurementRecordGrid.ItemsSource = records;
 
+        var selectedInstrument = instruments.FirstOrDefault();
+        if (selectedInstrument is not null)
+        {
+            SelectInstrument(selectedInstrument);
+            CalibrationRecordGrid.ItemsSource = calibrationRecords.Where(x => x.InstrumentId == selectedInstrument.Id).ToList();
+        }
+
         var latestTask = tasks.LastOrDefault();
         if (latestTask is not null)
         {
-            TaskCodeText.Text = latestTask.TaskCode;
-            if (string.IsNullOrWhiteSpace(RecordTaskCodeTextBox.Text))
-            {
-                RecordTaskCodeTextBox.Text = latestTask.TaskCode;
-            }
+            SelectTask(latestTask);
         }
 
         var selectedRecord = selectedRecordId is null
@@ -352,7 +494,6 @@ public partial class MainWindow : Window
             : records.FirstOrDefault(x => x.Id == selectedRecordId) ?? records.FirstOrDefault();
 
         MeasurementRecordGrid.SelectedItem = selectedRecord;
-
         if (selectedRecord is not null)
         {
             await LoadMeasurementDetailsAsync(selectedRecord.Id);
@@ -368,6 +509,58 @@ public partial class MainWindow : Window
     {
         AngleResultGrid.ItemsSource = await _angleResultRepository.GetByRecordIdAsync(recordId);
         EffectResultGrid.ItemsSource = await _effectResultRepository.GetByRecordIdAsync(recordId);
+    }
+
+    private void SelectInstrument(Instrument instrument)
+    {
+        InstrumentNameTextBox.Text = instrument.InstrumentName;
+        InstrumentModelTextBox.Text = instrument.Model;
+        InstrumentConnectionTypeTextBox.Text = instrument.ConnectionType;
+        InstrumentPortTextBox.Text = instrument.PortName ?? "-";
+        InstrumentStatusTextBox.Text = instrument.Status;
+    }
+
+    private void SelectTask(MeasurementTask task)
+    {
+        TaskCodeText.Text = task.TaskCode;
+        TaskStatusText.Text = $"任务状态: {task.Status}";
+        RecordTaskCodeTextBox.Text = task.TaskCode;
+    }
+
+    private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResult? angle, MeasurementEffectResult? effect)
+    {
+        RecordTaskCodeTextBox.Text = TaskCodeText.Text;
+        RecordNoTextBox.Text = record.RecordNo.ToString(CultureInfo.InvariantCulture);
+        RecordTypeTextBox.Text = record.RecordType;
+        RecordTotalDeltaETextBox.Text = record.TotalDeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordTotalEffectDiffTextBox.Text = record.TotalEffectDiff?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordSummaryTextBox.Text = record.ResultSummary ?? string.Empty;
+        SetPassStatus(record.PassStatus);
+
+        RecordAngleCodeTextBox.Text = angle?.AngleCode ?? string.Empty;
+        RecordCieLTextBox.Text = angle?.CieL?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordCieATextBox.Text = angle?.CieA?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordCieBTextBox.Text = angle?.CieB?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordAngleDeltaETextBox.Text = angle?.DeltaE?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+
+        RecordSparkleValueTextBox.Text = effect?.SparkleValue?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordSparkleDiffTextBox.Text = effect?.SparkleDiff?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordGraininessValueTextBox.Text = effect?.GraininessValue?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        RecordGraininessDiffTextBox.Text = effect?.GraininessDiff?.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    private void SetPassStatus(PassStatus passStatus)
+    {
+        foreach (var item in RecordPassStatusComboBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Content?.ToString(), passStatus.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                RecordPassStatusComboBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        RecordPassStatusComboBox.SelectedIndex = 0;
     }
 
     private void ClearSampleInputs()
@@ -439,3 +632,4 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 }
+

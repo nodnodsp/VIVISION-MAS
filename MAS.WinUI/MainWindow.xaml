@@ -86,14 +86,14 @@
                     <StackPanel Margin="20">
                         <TextBlock Text="当前任务" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock x:Name="TaskCodeText" Text="未创建" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="选中样品后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock x:Name="TaskStatusText" Text="选中样品后可生成任务草稿" Foreground="#CBD5E1" FontSize="14" />
                     </StackPanel>
                 </Border>
                 <Border Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
                         <TextBlock Text="开发进度" Foreground="#93C5FD" FontSize="15" />
                         <TextBlock Text="1.0" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,18,0,6" />
-                        <TextBlock Text="测量记录链路已接入" Foreground="#CBD5E1" FontSize="14" />
+                        <TextBlock Text="标准样/试样流程已接入" Foreground="#CBD5E1" FontSize="14" />
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -110,7 +110,9 @@
                         <WrapPanel>
                             <Button x:Name="InitializeDatabaseButton" Content="初始化数据库" Width="148" Height="44" Margin="0,0,12,12" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="InitializeDatabaseButton_OnClick" />
                             <Button Content="生成任务草稿" Width="148" Height="44" Margin="0,0,12,12" Background="#0EA5E9" Foreground="White" BorderBrush="#0EA5E9" Click="CreateDraftTaskButton_OnClick" />
-                            <Button Content="刷新主数据" Width="148" Height="44" Margin="0,0,12,12" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="RefreshDataButton_OnClick" />
+                            <Button Content="标准样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#22C55E" Foreground="White" BorderBrush="#22C55E" Click="ExecuteStandardMeasurementButton_OnClick" />
+                            <Button Content="试样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="ExecuteTrialMeasurementButton_OnClick" />
+                            <Button Content="刷新主数据" Width="148" Height="44" Margin="0,0,12,12" Background="#475569" Foreground="White" BorderBrush="#475569" Click="RefreshDataButton_OnClick" />
                             <Button Content="查看建表脚本" Width="148" Height="44" Margin="0,0,12,12" Background="#F59E0B" Foreground="White" BorderBrush="#F59E0B" Click="OpenSchemaButton_OnClick" />
                         </WrapPanel>
                     </StackPanel>
@@ -124,6 +126,76 @@
             </Grid>
 
             <TabControl Grid.Row="2" Margin="0,0,0,18" Background="#101B33" BorderBrush="#334155" Foreground="White">
+                <TabItem Header="仪器连接">
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="设备接入" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                            <TextBlock Text="当前仪器" Margin="0,6,0,4" />
+                            <TextBox x:Name="InstrumentNameTextBox" IsReadOnly="True" />
+                            <TextBlock Text="型号" Margin="0,10,0,4" />
+                            <TextBox x:Name="InstrumentModelTextBox" IsReadOnly="True" />
+                            <TextBlock Text="连接方式" Margin="0,10,0,4" />
+                            <TextBox x:Name="InstrumentConnectionTypeTextBox" IsReadOnly="True" />
+                            <TextBlock Text="端口" Margin="0,10,0,4" />
+                            <TextBox x:Name="InstrumentPortTextBox" IsReadOnly="True" />
+                            <TextBlock Text="状态" Margin="0,10,0,4" />
+                            <TextBox x:Name="InstrumentStatusTextBox" IsReadOnly="True" />
+                            <WrapPanel Margin="0,18,0,0">
+                                <Button Content="连接仪器" Width="96" Height="40" Margin="0,0,10,10" Background="#22C55E" Foreground="White" BorderBrush="#22C55E" Click="ConnectInstrumentButton_OnClick" />
+                                <Button Content="断开连接" Width="96" Height="40" Margin="0,0,10,10" Background="#475569" Foreground="White" BorderBrush="#475569" Click="DisconnectInstrumentButton_OnClick" />
+                                <Button Content="白板校准" Width="96" Height="40" Margin="0,0,10,10" Background="#0EA5E9" Foreground="White" BorderBrush="#0EA5E9" Click="WhiteCalibrationButton_OnClick" />
+                                <Button Content="黑腔校准" Width="96" Height="40" Margin="0,0,10,10" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="BlackCalibrationButton_OnClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1.2*" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <DataGrid x:Name="InstrumentGrid"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False"
+                                      SelectionChanged="InstrumentGrid_OnSelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="编号" Binding="{Binding InstrumentCode}" Width="140" />
+                                    <DataGridTextColumn Header="名称" Binding="{Binding InstrumentName}" Width="180" />
+                                    <DataGridTextColumn Header="型号" Binding="{Binding Model}" Width="120" />
+                                    <DataGridTextColumn Header="连接方式" Binding="{Binding ConnectionType}" Width="100" />
+                                    <DataGridTextColumn Header="端口" Binding="{Binding PortName}" Width="100" />
+                                    <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <DataGrid x:Name="CalibrationRecordGrid"
+                                      Grid.Row="1"
+                                      Margin="0,18,0,0"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      Background="#0F172A"
+                                      Foreground="White"
+                                      BorderBrush="#334155"
+                                      HeadersVisibility="Column"
+                                      CanUserAddRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="校准类型" Binding="{Binding CalibrationType}" Width="120" />
+                                    <DataGridTextColumn Header="结果" Binding="{Binding ResultCode}" Width="90" />
+                                    <DataGridTextColumn Header="开始时间" Binding="{Binding StartedAt}" Width="180" />
+                                    <DataGridTextColumn Header="完成时间" Binding="{Binding FinishedAt}" Width="180" />
+                                    <DataGridTextColumn Header="到期时间" Binding="{Binding ExpiresAt}" Width="180" />
+                                    <DataGridTextColumn Header="备注" Binding="{Binding Remark}" Width="220" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </TabItem>
                 <TabItem Header="样品管理">
                     <Grid Margin="18">
                         <Grid.ColumnDefinitions>
@@ -264,7 +336,8 @@
                                   Foreground="White"
                                   BorderBrush="#334155"
                                   HeadersVisibility="Column"
-                                  CanUserAddRows="False">
+                                  CanUserAddRows="False"
+                                  SelectionChanged="TaskGrid_OnSelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="任务编号" Binding="{Binding TaskCode}" Width="220" />
                                 <DataGridTextColumn Header="仪器ID" Binding="{Binding InstrumentId}" Width="140" />
@@ -286,13 +359,18 @@
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,18,0">
                             <StackPanel>
-                                <TextBlock Text="新增测量记录" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                                <TextBlock Text="测量流程" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
                                 <TextBlock Text="任务编号" Margin="0,6,0,4" />
                                 <TextBox x:Name="RecordTaskCodeTextBox" />
                                 <TextBlock Text="记录序号" Margin="0,10,0,4" />
                                 <TextBox x:Name="RecordNoTextBox" Text="1" />
                                 <TextBlock Text="记录类型" Margin="0,10,0,4" />
                                 <TextBox x:Name="RecordTypeTextBox" Text="trial" />
+                                <WrapPanel Margin="0,14,0,0">
+                                    <Button Content="执行标准样测量" Width="150" Height="40" Margin="0,0,10,10" Background="#22C55E" Foreground="White" BorderBrush="#22C55E" Click="ExecuteStandardMeasurementButton_OnClick" />
+                                    <Button Content="执行试样测量" Width="150" Height="40" Margin="0,0,10,10" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="ExecuteTrialMeasurementButton_OnClick" />
+                                </WrapPanel>
+                                <TextBlock Text="也可使用下面表单进行手工补录。" Foreground="#94A3B8" Margin="0,2,0,8" TextWrapping="Wrap" />
                                 <TextBlock Text="综合色差" Margin="0,10,0,4" />
                                 <TextBox x:Name="RecordTotalDeltaETextBox" Text="0.68" />
                                 <TextBlock Text="效果差" Margin="0,10,0,4" />
@@ -329,7 +407,7 @@
                                 <TextBox x:Name="RecordGraininessValueTextBox" Text="2.06" />
                                 <TextBlock Text="Graininess 差值" Margin="0,10,0,4" />
                                 <TextBox x:Name="RecordGraininessDiffTextBox" Text="0.14" />
-                                <Button Content="保存测量记录" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveMeasurementRecordButton_OnClick" />
+                                <Button Content="保存手工记录" Margin="0,18,0,0" Height="40" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="SaveMeasurementRecordButton_OnClick" />
                             </StackPanel>
                         </ScrollViewer>
 
@@ -430,7 +508,12 @@
         </Grid>
 
         <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#0B1225">
-            <TextBlock Text="MAS V1 / 当前阶段：数据库初始化 + 主数据录入 + 任务草稿写入 + 测量记录保存" Foreground="#94A3B8" VerticalAlignment="Center" Margin="20,0" />
+            <TextBlock Text="MAS V1 / 当前阶段：数据库初始化 + 主数据录入 + 任务草稿 + 标准样/试样测量流程" Foreground="#94A3B8" VerticalAlignment="Center" Margin="20,0" />
         </Border>
     </Grid>
 </Window>
+
+
+
+
+
