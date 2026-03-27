@@ -20,10 +20,11 @@ var angleResultRepository = new SqliteMeasurementAngleResultRepository();
 var effectResultRepository = new SqliteMeasurementEffectResultRepository();
 var reportExportRepository = new SqliteReportExportRepository();
 var operationLogRepository = new SqliteOperationLogRepository();
+var rawPacketRepository = new SqliteRawPacketRepository();
 var appSettingsStore = new AppSettingsStore();
 var appSettings = await appSettingsStore.LoadAsync();
 var runtimeFactory = new InstrumentRuntimeFactory();
-var runtimeServices = runtimeFactory.Create(appSettings, instrumentRepository, calibrationRecordRepository);
+var runtimeServices = runtimeFactory.Create(appSettings, instrumentRepository, calibrationRecordRepository, rawPacketRepository);
 
 var instrumentConnectionService = runtimeServices.ConnectionService;
 var taskService = new MeasurementTaskService();
@@ -120,6 +121,7 @@ var tasks = await taskRepository.GetAllAsync();
 var records = await measurementRecordRepository.GetAllAsync();
 var exports = await reportExportRepository.GetAllAsync();
 var logs = await operationLogRepository.GetRecentAsync(10);
+var rawPackets = await rawPacketRepository.GetRecentAsync(10);
 var latestRecord = records.FirstOrDefault();
 var angleResults = latestRecord is null ? Array.Empty<MeasurementAngleResult>() : await angleResultRepository.GetByRecordIdAsync(latestRecord.Id);
 var effectResults = latestRecord is null ? Array.Empty<MeasurementEffectResult>() : await effectResultRepository.GetByRecordIdAsync(latestRecord.Id);
@@ -138,6 +140,7 @@ Console.WriteLine($"Tasks: {tasks.Count}");
 Console.WriteLine($"Measurement records: {records.Count}");
 Console.WriteLine($"Report exports: {exports.Count} / Latest={csvReportResult.ReportCode}");
 Console.WriteLine($"Recent operation logs: {logs.Count}");
+Console.WriteLine($"Recent raw packets: {rawPackets.Count}");
 Console.WriteLine($"Latest task: {task.TaskCode} / Status={latestTask?.Status}");
 Console.WriteLine($"Standard measurement record: {standardResult.Record.RecordNo} / DeltaE={standardResult.Record.TotalDeltaE}");
 Console.WriteLine($"Trial measurement record: {trialResult.Record.RecordNo} / DeltaE={trialResult.Record.TotalDeltaE}");
@@ -151,3 +154,5 @@ if (latestRecord is not null)
     Console.WriteLine($"Effect results: {effectResults.Count}");
 }
 Console.WriteLine("Database bootstrap, workflow and report verification completed successfully.");
+
+

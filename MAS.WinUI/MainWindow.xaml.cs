@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     private readonly SqliteMeasurementEffectResultRepository _effectResultRepository = new();
     private readonly SqliteReportExportRepository _reportExportRepository = new();
     private readonly SqliteOperationLogRepository _operationLogRepository = new();
+    private readonly SqliteRawPacketRepository _rawPacketRepository = new();
     private readonly MeasurementReportService _reportService;
     private readonly AppSettingsStore _appSettingsStore = new();
     private readonly DataMaintenanceService _dataMaintenanceService = new();
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
     private IReadOnlyList<MeasurementRecord> _allMeasurementRecords = Array.Empty<MeasurementRecord>();
     private IReadOnlyList<ReportExport> _allReportExports = Array.Empty<ReportExport>();
     private IReadOnlyList<OperationLog> _allOperationLogs = Array.Empty<OperationLog>();
+    private IReadOnlyList<RawPacket> _allRawPackets = Array.Empty<RawPacket>();
 
     public MainWindow()
     {
@@ -569,6 +571,7 @@ public partial class MainWindow : Window
     {
         ReportFilterTextBox.Clear();
         OperationLogFilterTextBox.Clear();
+        PacketFilterTextBox.Clear();
         ApplyReportFilters();
     }
 
@@ -783,7 +786,7 @@ private async Task LoadSettingsAsync()
 
     private void ConfigureRuntimeServices()
     {
-        var runtimeServices = _instrumentRuntimeFactory.Create(_appSettings, _instrumentRepository, _calibrationRecordRepository);
+        var runtimeServices = _instrumentRuntimeFactory.Create(_appSettings, _instrumentRepository, _calibrationRecordRepository, _rawPacketRepository);
         _instrumentConnectionService = runtimeServices.ConnectionService;
         _workflowService = new MeasurementWorkflowService(
             _taskRepository,
@@ -892,6 +895,7 @@ private async Task LoadSettingsAsync()
         var records = await _measurementRecordRepository.GetAllAsync();
         var reportExports = await _reportExportRepository.GetAllAsync();
         var operationLogs = await _operationLogRepository.GetRecentAsync(50);
+        var rawPackets = await _rawPacketRepository.GetRecentAsync(100);
 
         _allSamples = samples;
         _allStandardSamples = standards;
@@ -900,6 +904,7 @@ private async Task LoadSettingsAsync()
         _allMeasurementRecords = records;
         _allReportExports = reportExports;
         _allOperationLogs = operationLogs;
+        _allRawPackets = rawPackets;
 
         InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = _allSamples;
@@ -1032,12 +1037,18 @@ private async Task LoadSettingsAsync()
     {
         var reportFilter = ReportFilterTextBox?.Text?.Trim();
         var moduleFilter = OperationLogFilterTextBox?.Text?.Trim();
+        var packetFilter = PacketFilterTextBox?.Text?.Trim();
 
         ReportExportGrid.ItemsSource = _allReportExports.Where(export =>
             string.IsNullOrWhiteSpace(reportFilter) || export.ReportCode.Contains(reportFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
         OperationLogGrid.ItemsSource = _allOperationLogs.Where(log =>
             string.IsNullOrWhiteSpace(moduleFilter) || log.ModuleName.Contains(moduleFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        RawPacketGrid.ItemsSource = _allRawPackets.Where(packet =>
+            string.IsNullOrWhiteSpace(packetFilter) ||
+            (!string.IsNullOrWhiteSpace(packet.PacketType) && packet.PacketType.Contains(packetFilter, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrWhiteSpace(packet.PacketText) && packet.PacketText.Contains(packetFilter, StringComparison.OrdinalIgnoreCase))).ToList();
     }
 
     private async Task LoadMeasurementDetailsAsync(string recordId)
@@ -1418,6 +1429,7 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
 
 
 

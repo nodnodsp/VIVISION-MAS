@@ -8,9 +8,24 @@ public sealed class SimulatedInstrumentMeasurementService : IInstrumentMeasureme
 {
     private static readonly string[] TrialAngles = ["15as-15", "45as45", "45as110"];
     private static readonly string[] StandardAngles = ["15as-15", "45as110"];
+    private readonly IRawPacketRepository _rawPacketRepository;
 
-    public Task<InstrumentMeasurementResult> MeasureAsync(InstrumentMeasurementRequest request, CancellationToken cancellationToken = default)
+    public SimulatedInstrumentMeasurementService(IRawPacketRepository rawPacketRepository)
     {
+        _rawPacketRepository = rawPacketRepository;
+    }
+
+    public async Task<InstrumentMeasurementResult> MeasureAsync(InstrumentMeasurementRequest request, CancellationToken cancellationToken = default)
+    {
+        await RawPacketLogHelper.LogAsync(
+            _rawPacketRepository,
+            "outbound",
+            "measure-request",
+            $"MEASURE|{request.RecordType.ToUpperInvariant()}|{request.TaskCode}|SEQ:{request.SequenceNo}|MODE:{request.MeasurementMode}",
+            request.InstrumentId,
+            request.TaskId,
+            cancellationToken);
+
         var seed = HashCode.Combine(request.TaskCode, request.RecordType, request.SequenceNo, request.TaskType);
         var random = new Random(seed);
         var isTrial = string.Equals(request.RecordType, "trial", StringComparison.OrdinalIgnoreCase);
@@ -57,7 +72,16 @@ public sealed class SimulatedInstrumentMeasurementService : IInstrumentMeasureme
             ? $"试样测量完成，综合色差 {totalDeltaE:F2}，效果差 {totalEffectDiff:F2}。"
             : $"标准样测量完成，标准数据已刷新，综合色差 {totalDeltaE:F2}。";
 
-        return Task.FromResult(new InstrumentMeasurementResult
+        await RawPacketLogHelper.LogAsync(
+            _rawPacketRepository,
+            "inbound",
+            "measure-response",
+            $"RESULT|{request.RecordType.ToUpperInvariant()}|DE:{totalDeltaE:F2}|EF:{totalEffectDiff:F2}|STATUS:{pass}",
+            request.InstrumentId,
+            request.TaskId,
+            cancellationToken);
+
+        return new InstrumentMeasurementResult
         {
             TotalDeltaE = totalDeltaE,
             TotalEffectDiff = totalEffectDiff,
@@ -65,7 +89,7 @@ public sealed class SimulatedInstrumentMeasurementService : IInstrumentMeasureme
             ResultSummary = summary,
             AngleResults = angleResults,
             EffectResults = effectResults,
-        });
+        };
     }
 
     private static PassStatus EvaluatePassStatus(double totalDeltaE, double totalEffectDiff)

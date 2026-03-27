@@ -45,6 +45,8 @@ public sealed class MeasurementWorkflowService : IMeasurementWorkflowService
         {
             var measurement = await _instrumentMeasurementService.MeasureAsync(new InstrumentMeasurementRequest
             {
+                TaskId = task.Id,
+                InstrumentId = task.InstrumentId,
                 TaskCode = task.TaskCode,
                 TaskType = task.TaskType,
                 RecordType = recordType,
@@ -119,3 +121,4 @@ public sealed class MeasurementWorkflowService : IMeasurementWorkflowService
         }
     }
 }
+

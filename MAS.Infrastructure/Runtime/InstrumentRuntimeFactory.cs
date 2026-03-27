@@ -9,7 +9,8 @@ public sealed class InstrumentRuntimeFactory
     public InstrumentRuntimeServices Create(
         AppSettings settings,
         IInstrumentRepository instrumentRepository,
-        ICalibrationRecordRepository calibrationRecordRepository)
+        ICalibrationRecordRepository calibrationRecordRepository,
+        IRawPacketRepository rawPacketRepository)
     {
         var runtimeMode = settings.InstrumentRuntimeMode?.Trim();
         if (string.Equals(runtimeMode, "SerialStub", StringComparison.OrdinalIgnoreCase))
@@ -18,10 +19,12 @@ public sealed class InstrumentRuntimeFactory
             {
                 ConnectionService = new SerialStubInstrumentConnectionService(
                     instrumentRepository,
+                    rawPacketRepository,
                     settings.InstrumentPortName,
                     settings.InstrumentBaudRate,
                     settings.InstrumentReadTimeoutMs),
                 MeasurementService = new SerialStubInstrumentMeasurementService(
+                    rawPacketRepository,
                     settings.InstrumentPortName,
                     settings.InstrumentBaudRate,
                     settings.InstrumentReadTimeoutMs),
@@ -31,8 +34,8 @@ public sealed class InstrumentRuntimeFactory
 
         return new InstrumentRuntimeServices
         {
-            ConnectionService = new SimulatedInstrumentConnectionService(instrumentRepository, calibrationRecordRepository),
-            MeasurementService = new SimulatedInstrumentMeasurementService(),
+            ConnectionService = new SimulatedInstrumentConnectionService(instrumentRepository, calibrationRecordRepository, rawPacketRepository),
+            MeasurementService = new SimulatedInstrumentMeasurementService(rawPacketRepository),
             RuntimeDescription = "模拟仪器模式 / 无需真实串口协议",
         };
     }

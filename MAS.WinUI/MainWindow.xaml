@@ -623,6 +623,8 @@
                             <TextBox x:Name="ReportFilterTextBox" Width="150" Margin="0,0,10,0" />
                             <TextBlock Text="日志模块" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <TextBox x:Name="OperationLogFilterTextBox" Width="120" Margin="0,0,10,0" />
+                            <TextBlock Text="报文类型" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox x:Name="PacketFilterTextBox" Width="120" Margin="0,0,10,0" />
                             <Button Content="筛选" Width="70" Height="34" Margin="0,0,10,0" Background="#475569" Foreground="White" BorderBrush="#475569" Click="ApplyReportFilterButton_OnClick" />
                             <Button Content="清空" Width="70" Height="34" Background="#334155" Foreground="White" BorderBrush="#334155" Click="ClearReportFilterButton_OnClick" />
                         </WrapPanel>
@@ -650,23 +652,46 @@
                                 <ColumnDefinition Width="1.05*" />
                                 <ColumnDefinition Width="0.95*" />
                             </Grid.ColumnDefinitions>
-                            <GroupBox Header="操作日志" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
-                                <DataGrid x:Name="OperationLogGrid"
-                                          AutoGenerateColumns="False"
-                                          IsReadOnly="True"
-                                          Background="#0F172A"
-                                          Foreground="White"
-                                          BorderBrush="#334155"
-                                          HeadersVisibility="Column"
-                                          CanUserAddRows="False">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="100" />
-                                        <DataGridTextColumn Header="操作" Binding="{Binding OperationType}" Width="100" />
-                                        <DataGridTextColumn Header="描述" Binding="{Binding OperationDesc}" Width="320" />
-                                        <DataGridTextColumn Header="结果" Binding="{Binding OperationResult}" Width="100" />
-                                        <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                            <GroupBox Header="历史日志" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
+                                <TabControl Background="#0F172A" BorderBrush="#334155" Foreground="White">
+                                    <TabItem Header="操作日志">
+                                        <DataGrid x:Name="OperationLogGrid"
+                                                  AutoGenerateColumns="False"
+                                                  IsReadOnly="True"
+                                                  Background="#0F172A"
+                                                  Foreground="White"
+                                                  BorderBrush="#334155"
+                                                  HeadersVisibility="Column"
+                                                  CanUserAddRows="False">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="100" />
+                                                <DataGridTextColumn Header="操作" Binding="{Binding OperationType}" Width="100" />
+                                                <DataGridTextColumn Header="描述" Binding="{Binding OperationDesc}" Width="320" />
+                                                <DataGridTextColumn Header="结果" Binding="{Binding OperationResult}" Width="100" />
+                                                <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </TabItem>
+                                    <TabItem Header="通讯报文">
+                                        <DataGrid x:Name="RawPacketGrid"
+                                                  AutoGenerateColumns="False"
+                                                  IsReadOnly="True"
+                                                  Background="#0F172A"
+                                                  Foreground="White"
+                                                  BorderBrush="#334155"
+                                                  HeadersVisibility="Column"
+                                                  CanUserAddRows="False">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="90" />
+                                                <DataGridTextColumn Header="类型" Binding="{Binding PacketType}" Width="160" />
+                                                <DataGridTextColumn Header="任务/仪器" Binding="{Binding TaskId}" Width="180" />
+                                                <DataGridTextColumn Header="仪器ID" Binding="{Binding InstrumentId}" Width="180" />
+                                                <DataGridTextColumn Header="报文文本" Binding="{Binding PacketText}" Width="360" />
+                                                <DataGridTextColumn Header="时间" Binding="{Binding CreatedAt}" Width="180" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </TabItem>
+                                </TabControl>
                             </GroupBox>
                             <GroupBox Grid.Column="1" Header="报告预览" Margin="9,0,0,0" Foreground="White" BorderBrush="#334155">
                                 <Grid Margin="12">
@@ -790,6 +815,9 @@
         </Border>
     </Grid>
 </Window>
+
+
+
 
 
 
