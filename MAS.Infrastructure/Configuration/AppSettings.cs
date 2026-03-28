@@ -12,5 +12,21 @@ public sealed class AppSettings
     public string InstrumentPortName { get; set; } = "COM3";
     public int InstrumentBaudRate { get; set; } = 115200;
     public int InstrumentReadTimeoutMs { get; set; } = 1500;
+    public string DefaultLightSource { get; set; } = "D65";
+    public string DefaultObserver { get; set; } = "2°";
+    public List<string> VisibleDisplayItems { get; set; } =
+    [
+        "名称",
+        "角度",
+        "光源",
+        "观察者",
+        "仿真色",
+        "时间",
+        "L*",
+        "a*",
+        "b*",
+        "C*",
+        "h*"
+    ];
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

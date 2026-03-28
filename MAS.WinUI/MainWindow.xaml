@@ -131,14 +131,14 @@
                 <MenuItem Header="颜色录入..." Tag="sample" Click="NavigationButton_OnClick" />
             </MenuItem>
             <MenuItem Header="设置">
-                <MenuItem Header="默认光源/观察者" Tag="默认光源/观察者" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="光源设置" Tag="光源设置" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="默认光源/观察者" Click="OpenLightSourceObserverSettings_OnClick" />
+                <MenuItem Header="光源设置" Click="OpenLightSourceObserverSettings_OnClick" />
                 <Separator />
-                <MenuItem Header="默认容差" Tag="默认容差" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="容差设置" Tag="template" Click="NavigationButton_OnClick" />
+                <MenuItem Header="默认容差" Click="OpenToleranceSettings_OnClick" />
+                <MenuItem Header="容差设置" Click="OpenToleranceSettings_OnClick" />
                 <Separator />
-                <MenuItem Header="默认显示数据项" Tag="默认显示数据项" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="显示的数据项" Tag="显示的数据项" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="默认显示数据项" Click="OpenDisplaySettings_OnClick" />
+                <MenuItem Header="显示的数据项" Click="OpenDisplaySettings_OnClick" />
                 <MenuItem Header="自动命名设置" Tag="自动命名设置" Click="ShellPlaceholderAction_OnClick" />
                 <Separator />
                 <MenuItem Header="语言" Tag="语言" Click="ShellPlaceholderAction_OnClick" />
@@ -371,23 +371,23 @@
                               RowStyle="{StaticResource MainTableRowStyle}"
                               SelectionChanged="MainSampleDisplayGrid_OnSelectionChanged">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="150" />
-                            <DataGridTextColumn Header="角度" Binding="{Binding Angle}" Width="90" />
-                            <DataGridTextColumn Header="光源" Binding="{Binding LightSource}" Width="70" />
-                            <DataGridTextColumn Header="观察者" Binding="{Binding Observer}" Width="70" />
-                            <DataGridTemplateColumn Header="仿真色" Width="74">
+                            <DataGridTextColumn x:Name="MainColumnName" Header="名称" Binding="{Binding Name}" Width="150" />
+                            <DataGridTextColumn x:Name="MainColumnAngle" Header="角度" Binding="{Binding Angle}" Width="90" />
+                            <DataGridTextColumn x:Name="MainColumnLightSource" Header="光源" Binding="{Binding LightSource}" Width="70" />
+                            <DataGridTextColumn x:Name="MainColumnObserver" Header="观察者" Binding="{Binding Observer}" Width="70" />
+                            <DataGridTemplateColumn x:Name="MainColumnSimulatedColor" Header="仿真色" Width="74">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Width="36" Height="18" Background="{Binding SimulatedColorBrush}" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="2" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="170" />
-                            <DataGridTextColumn Header="L*" Binding="{Binding LStar, StringFormat=F2}" Width="60" />
-                            <DataGridTextColumn Header="a*" Binding="{Binding AStar, StringFormat=F2}" Width="60" />
-                            <DataGridTextColumn Header="b*" Binding="{Binding BStar, StringFormat=F2}" Width="60" />
-                            <DataGridTextColumn Header="C*" Binding="{Binding CStar, StringFormat=F2}" Width="60" />
-                            <DataGridTextColumn Header="h*" Binding="{Binding HStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn x:Name="MainColumnTime" Header="时间" Binding="{Binding TimeText}" Width="170" />
+                            <DataGridTextColumn x:Name="MainColumnLStar" Header="L*" Binding="{Binding LStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn x:Name="MainColumnAStar" Header="a*" Binding="{Binding AStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn x:Name="MainColumnBStar" Header="b*" Binding="{Binding BStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn x:Name="MainColumnCStar" Header="C*" Binding="{Binding CStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn x:Name="MainColumnHStar" Header="h*" Binding="{Binding HStar, StringFormat=F2}" Width="60" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -1140,6 +1140,7 @@
         </Border>
     </Grid>
 </Window>
+
 
 
 

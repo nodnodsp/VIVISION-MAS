@@ -14,6 +14,7 @@ using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Operations;
 using MAS.Infrastructure.Repositories;
 using MAS.Infrastructure.Runtime;
+using MAS.WinUI.Configuration;
 using MAS.WinUI.Models;
 
 namespace MAS.WinUI;
@@ -36,11 +37,15 @@ public partial class MainWindow : Window
     private readonly SqliteRawPacketRepository _rawPacketRepository = new();
     private readonly MeasurementReportService _reportService;
     private readonly AppSettingsStore _appSettingsStore = new();
+    private readonly UiOptionCatalogStore _uiOptionCatalogStore = new();
+    private readonly ToleranceSettingsStore _toleranceSettingsStore = new();
     private readonly DataMaintenanceService _dataMaintenanceService = new();
     private readonly InstrumentRuntimeFactory _instrumentRuntimeFactory = new();
     private IMeasurementWorkflowService _workflowService;
     private IInstrumentConnectionService _instrumentConnectionService;
     private AppSettings _appSettings = new();
+    private UiOptionCatalog _uiOptionCatalog = new();
+    private ToleranceSettingsDocument _toleranceSettings = new();
     private string _runtimeDescription = "模拟仪器模式 / 无需真实串口协议";
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
@@ -127,6 +132,64 @@ public partial class MainWindow : Window
         }
 
         AppendLog($"{label ?? "当前功能"} 已触发，后续会继续按参考界面补齐交互细节。");
+    }
+
+    private async void OpenLightSourceObserverSettings_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new LightSourceObserverWindow(_uiOptionCatalog, _appSettings.DefaultLightSource, _appSettings.DefaultObserver)
+        {
+            Owner = this,
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _appSettings.DefaultLightSource = dialog.SelectedLightSource;
+        _appSettings.DefaultObserver = dialog.SelectedObserver;
+        await _appSettingsStore.SaveAsync(_appSettings);
+        ApplySettingsToInputs();
+        UpdateSettingsSummary();
+        await RefreshAllDataAsync();
+        AppendLog($"默认光源/观察者已更新: {_appSettings.DefaultLightSource} / {_appSettings.DefaultObserver}");
+    }
+
+    private async void OpenDisplaySettings_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new DisplaySettingsWindow(_uiOptionCatalog, _appSettings.VisibleDisplayItems)
+        {
+            Owner = this,
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _appSettings.VisibleDisplayItems = dialog.SelectedItems;
+        await _appSettingsStore.SaveAsync(_appSettings);
+        ApplyDisplayColumnVisibility();
+        UpdateSettingsSummary();
+        AppendLog($"显示数据项已更新，共 {_appSettings.VisibleDisplayItems.Count} 项。");
+    }
+
+    private async void OpenToleranceSettings_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ToleranceSettingsWindow(_toleranceSettings)
+        {
+            Owner = this,
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _toleranceSettings = dialog.Settings;
+        await _toleranceSettingsStore.SaveAsync(_toleranceSettings);
+        AppendLog($"容差设置已保存，类型 {_toleranceSettings.ToleranceType}，颜色容差 {_toleranceSettings.ColorToleranceItems.Count} 项。");
+        MessageBox.Show(this, "容差设置已保存到本地配置文件。", "容差设置", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void CloseWindowMenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -895,9 +958,18 @@ public partial class MainWindow : Window
 
 private async Task LoadSettingsAsync()
     {
+        _uiOptionCatalog = await _uiOptionCatalogStore.LoadAsync();
+        _toleranceSettings = await _toleranceSettingsStore.LoadAsync();
         _appSettings = await _appSettingsStore.LoadAsync();
+
+        if (_appSettings.VisibleDisplayItems is null || _appSettings.VisibleDisplayItems.Count == 0)
+        {
+            _appSettings.VisibleDisplayItems = _uiOptionCatalog.DefaultDisplayItems.ToList();
+        }
+
         ConfigureRuntimeServices();
         ApplySettingsToInputs();
+        ApplyDisplayColumnVisibility();
         UpdateSettingsSummary();
     }
 
@@ -936,11 +1008,18 @@ private async Task LoadSettingsAsync()
         {
             RecordTypeTextBox.Text = _appSettings.DefaultTaskType;
         }
+
+        ApplyDisplayColumnVisibility();
     }
 
     private bool TryReadSettingsFromInputs(out AppSettings settings)
     {
-        settings = new AppSettings();
+        settings = new AppSettings
+        {
+            DefaultLightSource = _appSettings.DefaultLightSource,
+            DefaultObserver = _appSettings.DefaultObserver,
+            VisibleDisplayItems = _appSettings.VisibleDisplayItems?.ToList() ?? _uiOptionCatalog.DefaultDisplayItems.ToList(),
+        };
 
         if (!int.TryParse(SettingsAverageCountTextBox.Text, out var averageCount) || averageCount <= 0)
         {
@@ -1654,6 +1733,34 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
                 return;
             }
         }
+
+        comboBox.SelectedIndex = comboBox.Items.Count > 0 ? 0 : -1;
+    }
+
+    private void ApplyDisplayColumnVisibility()
+    {
+        var visibleItems = new HashSet<string>((_appSettings.VisibleDisplayItems ?? []).Where(x => !string.IsNullOrWhiteSpace(x)), StringComparer.OrdinalIgnoreCase);
+        if (visibleItems.Count == 0)
+        {
+            visibleItems = new HashSet<string>(_uiOptionCatalog.DefaultDisplayItems, StringComparer.OrdinalIgnoreCase);
+        }
+
+        SetColumnVisibility(MainColumnName, visibleItems.Contains("名称"));
+        SetColumnVisibility(MainColumnAngle, visibleItems.Contains("角度"));
+        SetColumnVisibility(MainColumnLightSource, visibleItems.Contains("光源"));
+        SetColumnVisibility(MainColumnObserver, visibleItems.Contains("观察者"));
+        SetColumnVisibility(MainColumnSimulatedColor, visibleItems.Contains("仿真色"));
+        SetColumnVisibility(MainColumnTime, visibleItems.Contains("时间"));
+        SetColumnVisibility(MainColumnLStar, visibleItems.Contains("L*"));
+        SetColumnVisibility(MainColumnAStar, visibleItems.Contains("a*"));
+        SetColumnVisibility(MainColumnBStar, visibleItems.Contains("b*"));
+        SetColumnVisibility(MainColumnCStar, visibleItems.Contains("C*"));
+        SetColumnVisibility(MainColumnHStar, visibleItems.Contains("h*"));
+    }
+
+    private static void SetColumnVisibility(DataGridColumn column, bool isVisible)
+    {
+        column.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private string GetSelectedReportFormat()
@@ -1763,6 +1870,8 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
 
 
 
