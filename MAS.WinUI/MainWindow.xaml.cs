@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private string _runtimeDescription = "模拟仪器模式 / 无需真实串口协议";
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
+    private IReadOnlyList<Sample> _filteredMainSamples = Array.Empty<Sample>();
     private IReadOnlyList<StandardSample> _allStandardSamples = Array.Empty<StandardSample>();
     private IReadOnlyList<ToleranceTemplate> _allTemplates = Array.Empty<ToleranceTemplate>();
     private IReadOnlyList<MeasurementRecord> _allMeasurementRecords = Array.Empty<MeasurementRecord>();
@@ -74,6 +75,61 @@ public partial class MainWindow : Window
         AppendLog($"当前仪器运行模式: {_runtimeDescription}");
     }
 
+    private void NavigationButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var tag = (sender as FrameworkElement)?.Tag?.ToString();
+        switch (tag)
+        {
+            case "dashboard":
+                WorkspaceTabControl.SelectedIndex = 0;
+                AppendLog("已切换到首页概览入口。");
+                break;
+            case "instrument":
+                WorkspaceTabControl.SelectedIndex = 0;
+                break;
+            case "sample":
+                WorkspaceTabControl.SelectedIndex = 1;
+                break;
+            case "standard":
+                WorkspaceTabControl.SelectedIndex = 2;
+                break;
+            case "template":
+                WorkspaceTabControl.SelectedIndex = 3;
+                break;
+            case "measurement_center":
+                WorkspaceTabControl.SelectedIndex = 4;
+                break;
+            case "measurement_analysis":
+                WorkspaceTabControl.SelectedIndex = 5;
+                break;
+            case "report":
+                WorkspaceTabControl.SelectedIndex = 6;
+                break;
+            case "settings":
+                WorkspaceTabControl.SelectedIndex = 7;
+                break;
+            default:
+                AppendLog("该导航入口暂未绑定具体页签。");
+                break;
+        }
+    }
+
+    private void ShellPlaceholderAction_OnClick(object sender, RoutedEventArgs e)
+    {
+        var element = sender as FrameworkElement;
+        var label = element?.Tag?.ToString();
+        if (string.IsNullOrWhiteSpace(label) && sender is HeaderedItemsControl headered)
+        {
+            label = headered.Header?.ToString();
+        }
+
+        AppendLog($"{label ?? "当前功能"} 已触发，后续会继续按参考界面补齐交互细节。");
+    }
+
+    private void CloseWindowMenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
     private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         await EnsureDatabaseReadyAsync();
@@ -265,12 +321,55 @@ public partial class MainWindow : Window
         ClearTemplateSummary();
     }
 
+    private void ApplyMainSampleFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ApplyMainSampleFilters();
+        AppendLog("主样品表筛选条件已应用。");
+    }
+
+    private void ClearMainSampleFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        MainSampleFilterTextBox.Clear();
+        MainSampleStatusFilterComboBox.SelectedIndex = 0;
+        ApplyMainSampleFilters();
+        AppendLog("主样品表筛选条件已应用。");
+    }
+
     private async void SampleGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (SampleGrid.SelectedItem is Sample sample)
         {
+            if (!Equals(MainSampleDisplayGrid.SelectedItem, sample))
+            {
+                MainSampleDisplayGrid.SelectedItem = sample;
+            }
+
             ApplySampleToInputs(sample);
             await LoadSampleSummaryAsync(sample);
+            UpdateMainSampleOverview(sample);
+        }
+        else
+        {
+            UpdateMainSampleOverview(null);
+        }
+    }
+
+    private async void MainSampleDisplayGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MainSampleDisplayGrid.SelectedItem is Sample sample)
+        {
+            if (!Equals(SampleGrid.SelectedItem, sample))
+            {
+                SampleGrid.SelectedItem = sample;
+            }
+
+            ApplySampleToInputs(sample);
+            await LoadSampleSummaryAsync(sample);
+            UpdateMainSampleOverview(sample);
+        }
+        else
+        {
+            UpdateMainSampleOverview(null);
         }
     }
 
@@ -908,21 +1007,25 @@ private async Task LoadSettingsAsync()
 
         InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = _allSamples;
+        ApplyMainSampleFilters();
         StandardSampleGrid.ItemsSource = _allStandardSamples;
         TemplateGrid.ItemsSource = _allTemplates;
         ApplyRecordFilters();
         ApplyReportFilters();
 
-        var selectedSample = _allSamples.FirstOrDefault();
+        var selectedSample = _filteredMainSamples.FirstOrDefault() ?? _allSamples.FirstOrDefault();
         SampleGrid.SelectedItem = selectedSample;
+        MainSampleDisplayGrid.SelectedItem = selectedSample;
         if (selectedSample is not null)
         {
             ApplySampleToInputs(selectedSample);
             await LoadSampleSummaryAsync(selectedSample);
+            UpdateMainSampleOverview(selectedSample);
         }
         else
         {
             ClearSampleSummary();
+            UpdateMainSampleOverview(null);
         }
 
         var selectedStandard = _allStandardSamples.FirstOrDefault();
@@ -1164,6 +1267,66 @@ private async Task LoadSettingsAsync()
         SampleUsageTextBlock.Text = "-";
     }
 
+    private void UpdateMainSampleOverview(Sample? sample)
+    {
+        MainSampleCountTextBlock.Text = _filteredMainSamples.Count == _allSamples.Count
+            ? $"共 {_allSamples.Count} 条样品"
+            : $"当前 {_filteredMainSamples.Count} / 总 {_allSamples.Count} 条样品";
+        MainSampleSelectionTextBlock.Text = sample is null
+            ? "当前未选中样品"
+            : $"当前选中: {sample.SampleCode} / {sample.SampleName} / {sample.Status} / {sample.MaterialName ?? "未设置材质"}";
+        UpdateFooterStatus(sample);
+    }
+
+    private void ApplyMainSampleFilters()
+    {
+        var keyword = MainSampleFilterTextBox.Text?.Trim();
+        var selectedStatus = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+        var filtered = _allSamples.Where(sample =>
+        {
+            var matchesKeyword = string.IsNullOrWhiteSpace(keyword)
+                || sample.SampleCode.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || sample.SampleName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || (sample.BatchNo?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (sample.MaterialName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (sample.ColorName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            var matchesStatus = string.IsNullOrWhiteSpace(selectedStatus)
+                || selectedStatus == "全部"
+                || string.Equals(sample.Status, selectedStatus, StringComparison.OrdinalIgnoreCase);
+
+            return matchesKeyword && matchesStatus;
+        }).ToList();
+
+        _filteredMainSamples = filtered;
+        MainSampleDisplayGrid.ItemsSource = _filteredMainSamples;
+
+        if (MainSampleDisplayGrid.SelectedItem is not Sample selected || !_filteredMainSamples.Any(x => x.Id == selected.Id))
+        {
+            MainSampleDisplayGrid.SelectedItem = _filteredMainSamples.FirstOrDefault();
+        }
+
+        if (_filteredMainSamples.Count == 0)
+        {
+            UpdateMainSampleOverview(null);
+        }
+        else if (MainSampleDisplayGrid.SelectedItem is Sample current)
+        {
+            UpdateMainSampleOverview(current);
+        }
+    }
+
+    private void UpdateFooterStatus(Sample? sample)
+    {
+        var keyword = MainSampleFilterTextBox.Text?.Trim();
+        var selectedStatus = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "全部";
+        var filterSummary = string.IsNullOrWhiteSpace(keyword) && selectedStatus == "全部"
+            ? "未筛选"
+            : $"筛选: 关键字={keyword ?? "-"} / 状态={selectedStatus}";
+        var sampleSummary = sample is null ? "当前未选中样品" : $"当前样品: {sample.SampleCode}";
+        FooterStatusTextBlock.Text = $"Ready  |  样品视图 {filterSummary}  |  {sampleSummary}";
+    }
     private void ClearStandardSummary()
     {
         StandardSummaryTextBlock.Text = "请选择一条标准样查看摘要。";
@@ -1429,6 +1592,13 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
+
+
+
+
 
 
 

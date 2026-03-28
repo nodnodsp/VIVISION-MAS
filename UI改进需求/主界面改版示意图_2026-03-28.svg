@@ -1,0 +1,132 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#eef2f3"/>
+  <rect x="0" y="0" width="1440" height="58" fill="#31a336"/>
+  <text x="26" y="38" font-size="30" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">∠</text>
+  <text x="64" y="40" font-size="26" font-weight="700" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">MSQC</text>
+  <text x="1180" y="38" font-size="18" font-family="Segoe UI Symbol, Segoe UI" fill="#d7f7da">◔ ◈ ⓘ — □ ×</text>
+
+  <rect x="0" y="58" width="1440" height="34" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="12" y="81" font-size="14" font-family="Segoe UI, Microsoft YaHei" fill="#111827">文件(F)</text>
+  <text x="78" y="81" font-size="14" font-family="Segoe UI, Microsoft YaHei" fill="#111827">仪器(I)</text>
+  <text x="144" y="81" font-size="14" font-family="Segoe UI, Microsoft YaHei" fill="#111827">色库管理</text>
+  <text x="233" y="81" font-size="14" font-family="Segoe UI, Microsoft YaHei" fill="#111827">设置</text>
+  <text x="282" y="81" font-size="14" font-family="Segoe UI, Microsoft YaHei" fill="#111827">帮助(H)</text>
+
+  <rect x="0" y="92" width="1440" height="96" fill="#ffffff" stroke="#d1d5db"/>
+  <g font-family="Segoe UI, Microsoft YaHei" fill="#111827" font-size="13" text-anchor="middle">
+    <g transform="translate(56,110)"><rect width="90" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="45" y="24" font-size="22" fill="#31a336">▣</text><text x="45" y="45">新建项目</text></g>
+    <g transform="translate(156,110)"><rect width="90" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="45" y="24" font-size="22" fill="#31a336">▤</text><text x="45" y="45">打开项目</text></g>
+    <g transform="translate(256,110)"><rect width="90" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="45" y="24" font-size="22" fill="#9ca3af">▥</text><text x="45" y="45" fill="#9ca3af">保存项目</text></g>
+    <g transform="translate(392,110)"><rect width="86" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="43" y="24" font-size="22" fill="#31a336">◎</text><text x="43" y="45">校准</text></g>
+    <g transform="translate(488,110)"><rect width="100" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="50" y="24" font-size="22" fill="#31a336">◉</text><text x="50" y="45">测量标准</text></g>
+    <g transform="translate(598,110)"><rect width="100" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="50" y="24" font-size="22" fill="#31a336">◌</text><text x="50" y="45">测量试样</text></g>
+    <g transform="translate(720,110)"><rect width="92" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="46" y="24" font-size="22" fill="#31a336">▦</text><text x="46" y="45">测量中心</text></g>
+    <g transform="translate(822,110)"><rect width="92" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="46" y="24" font-size="22" fill="#31a336">◫</text><text x="46" y="45">结果分析</text></g>
+    <g transform="translate(924,110)"><rect width="92" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="46" y="24" font-size="22" fill="#31a336">⌘</text><text x="46" y="45">色库管理</text></g>
+    <g transform="translate(1026,110)"><rect width="92" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="46" y="24" font-size="22" fill="#31a336">✎</text><text x="46" y="45">样品管理</text></g>
+    <g transform="translate(1128,110)"><rect width="92" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="46" y="24" font-size="22" fill="#31a336">▧</text><text x="46" y="45">容差设置</text></g>
+    <g transform="translate(1230,110)"><rect width="80" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="40" y="24" font-size="22" fill="#31a336">🖨</text><text x="40" y="45">打印</text></g>
+    <g transform="translate(1320,110)"><rect width="80" height="58" rx="6" fill="#fff" stroke="#d1d5db"/><text x="40" y="24" font-size="22" fill="#31a336">⇪</text><text x="40" y="45">导出</text></g>
+  </g>
+
+  <rect x="12" y="200" width="308" height="660" fill="#ffffff" stroke="#d1d5db"/>
+  <rect x="12" y="200" width="308" height="34" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="28" y="222" font-size="14" font-weight="600" font-family="Segoe UI, Microsoft YaHei" fill="#111827">项目浏览器</text>
+  <g font-family="Segoe UI, Microsoft YaHei" font-size="15" fill="#111827">
+    <text x="28" y="264">▾ Project001</text>
+    <rect x="26" y="278" width="278" height="34" fill="#6dc06f" rx="3"/>
+    <text x="46" y="300" fill="#ffffff">◉ 粗糙面</text>
+    <text x="248" y="300" fill="#ffffff">2026-03-25 10:48:55</text>
+    <text x="46" y="334" fill="#111827">◔ 光滑面</text>
+    <text x="248" y="334" fill="#111827">2026-03-25 10:49:47</text>
+  </g>
+
+  <g transform="translate(336,200)">
+    <rect width="1092" height="120" rx="10" fill="#13233d"/>
+    <g font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">
+      <text x="24" y="34" font-size="14" fill="#93c5fd">设备状态</text>
+      <text x="24" y="76" font-size="30" font-weight="700">已连接</text>
+      <text x="24" y="102" font-size="13" fill="#cbd5e1">MSQC-01 / COM3 / 模拟仪器模式</text>
+      <text x="308" y="34" font-size="14" fill="#93c5fd">数据库状态</text>
+      <text x="308" y="76" font-size="30" font-weight="700">已初始化</text>
+      <text x="308" y="102" font-size="13" fill="#cbd5e1">Data\MASQC.db</text>
+      <text x="592" y="34" font-size="14" fill="#93c5fd">当前任务</text>
+      <text x="592" y="76" font-size="24" font-weight="700">TASK-20260328-UI</text>
+      <text x="592" y="102" font-size="13" fill="#cbd5e1">任务草稿 / 试样测量准备就绪</text>
+      <text x="860" y="34" font-size="14" fill="#93c5fd">任务与报告</text>
+      <text x="860" y="76" font-size="30" font-weight="700">21 / 22</text>
+      <text x="860" y="102" font-size="13" fill="#cbd5e1">最近报告 RPT-20260327-090708</text>
+    </g>
+  </g>
+
+  <g transform="translate(336,334)">
+    <rect width="760" height="96" rx="10" fill="#101b33"/>
+    <rect x="776" width="316" height="96" rx="10" fill="#101b33"/>
+    <text x="22" y="32" font-size="22" font-weight="700" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">快速操作</text>
+    <text x="22" y="56" font-size="13" font-family="Segoe UI, Microsoft YaHei" fill="#94a3b8">主流程动作保留在工作区上方，方便快速切换测量任务。</text>
+    <g font-family="Segoe UI, Microsoft YaHei" font-size="13" fill="#ffffff">
+      <rect x="22" y="64" width="104" height="24" rx="4" fill="#14b8a6"/><text x="42" y="81">初始化数据库</text>
+      <rect x="136" y="64" width="98" height="24" rx="4" fill="#0ea5e9"/><text x="161" y="81">生成任务草稿</text>
+      <rect x="244" y="64" width="86" height="24" rx="4" fill="#22c55e"/><text x="266" y="81">标准样测量</text>
+      <rect x="340" y="64" width="86" height="24" rx="4" fill="#2563eb"/><text x="365" y="81">试样测量</text>
+      <rect x="436" y="64" width="72" height="24" rx="4" fill="#f97316"/><text x="458" y="81">导出报告</text>
+    </g>
+    <text x="796" y="32" font-size="22" font-weight="700" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">开发备注</text>
+    <text x="796" y="58" font-size="13" font-family="Segoe UI, Microsoft YaHei" fill="#94a3b8">布局已调整为菜单 + 工具区 + 项目树 + 工作区。</text>
+    <text x="796" y="78" font-size="13" font-family="Segoe UI, Microsoft YaHei" fill="#94a3b8">下一步可继续按设计图细化配色、图标和表格视觉。</text>
+  </g>
+
+  <g transform="translate(336,446)">
+    <rect width="1092" height="270" rx="10" fill="#101b33"/>
+    <g font-family="Segoe UI, Microsoft YaHei">
+      <rect x="18" y="16" width="90" height="32" rx="6" fill="#31a336"/>
+      <text x="44" y="37" font-size="14" font-weight="700" fill="#ffffff">颜色</text>
+      <rect x="112" y="16" width="90" height="32" rx="6" fill="#d1d5db"/><text x="138" y="37" font-size="14" fill="#111827">效果色</text>
+      <rect x="206" y="16" width="90" height="32" rx="6" fill="#d1d5db"/><text x="234" y="37" font-size="14" fill="#111827">光谱图</text>
+      <rect x="300" y="16" width="90" height="32" rx="6" fill="#d1d5db"/><text x="327" y="37" font-size="14" fill="#111827">Lab Plot</text>
+      <rect x="18" y="58" width="1056" height="188" fill="#ffffff" rx="4"/>
+      <rect x="18" y="58" width="1056" height="24" fill="#f3f4f6"/>
+      <text x="30" y="75" font-size="13" font-weight="600" fill="#111827">名称</text>
+      <text x="110" y="75" font-size="13" font-weight="600" fill="#111827">角度</text>
+      <text x="182" y="75" font-size="13" font-weight="600" fill="#111827">光源</text>
+      <text x="252" y="75" font-size="13" font-weight="600" fill="#111827">观察者</text>
+      <text x="336" y="75" font-size="13" font-weight="600" fill="#111827">时间</text>
+      <text x="518" y="75" font-size="13" font-weight="600" fill="#111827">ΔE*</text>
+      <text x="603" y="75" font-size="13" font-weight="600" fill="#111827">L*</text>
+      <text x="668" y="75" font-size="13" font-weight="600" fill="#111827">a*</text>
+      <text x="733" y="75" font-size="13" font-weight="600" fill="#111827">b*</text>
+      <text x="802" y="75" font-size="13" font-weight="600" fill="#111827">C*</text>
+      <text x="870" y="75" font-size="13" font-weight="600" fill="#111827">h°</text>
+      <rect x="22" y="86" width="1048" height="28" fill="#a8d9a5"/>
+      <text x="30" y="105" font-size="13" fill="#111827">粗糙面</text>
+      <text x="110" y="105" font-size="13" fill="#111827">45as15</text>
+      <text x="182" y="105" font-size="13" fill="#111827">D65</text>
+      <text x="252" y="105" font-size="13" fill="#111827">2°</text>
+      <text x="336" y="105" font-size="13" fill="#111827">2026/3/28 09:20:12</text>
+      <text x="518" y="105" font-size="13" font-weight="700" fill="#111827">0.64</text>
+      <text x="603" y="105" font-size="13" fill="#111827">98.70</text>
+      <text x="668" y="105" font-size="13" fill="#111827">0.48</text>
+      <text x="733" y="105" font-size="13" fill="#111827">2.84</text>
+      <text x="802" y="105" font-size="13" fill="#111827">2.88</text>
+      <text x="870" y="105" font-size="13" fill="#111827">79.41</text>
+      <text x="30" y="139" font-size="13" fill="#111827">光滑面</text>
+      <text x="110" y="139" font-size="13" fill="#111827">45as45</text>
+      <text x="182" y="139" font-size="13" fill="#111827">D65</text>
+      <text x="252" y="139" font-size="13" fill="#111827">2°</text>
+      <text x="336" y="139" font-size="13" fill="#111827">2026/3/28 09:21:47</text>
+      <text x="518" y="139" font-size="13" font-weight="700" fill="#ef4444">1.21</text>
+    </g>
+  </g>
+
+  <g transform="translate(336,732)">
+    <rect width="1092" height="128" rx="10" fill="#101b33"/>
+    <text x="18" y="30" font-size="20" font-weight="700" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">运行日志</text>
+    <rect x="18" y="42" width="1056" height="70" fill="#0f172a" rx="4"/>
+    <text x="32" y="64" font-size="13" font-family="Consolas, Microsoft YaHei" fill="#dbeafe">[09:20:12] 主窗口布局已切换为 MSQC 风格</text>
+    <text x="32" y="86" font-size="13" font-family="Consolas, Microsoft YaHei" fill="#dbeafe">[09:20:18] 左侧项目树、顶部菜单和工具区已接入</text>
+    <text x="32" y="108" font-size="13" font-family="Consolas, Microsoft YaHei" fill="#dbeafe">[09:20:25] 工作区保留原有业务控件，待进一步细化视觉</text>
+  </g>
+
+  <rect x="0" y="872" width="1440" height="28" fill="#32a336"/>
+  <text x="10" y="891" font-size="13" font-family="Segoe UI, Microsoft YaHei" fill="#ffffff">Ready  |  MAS V1 当前阶段：数据库初始化 + 主数据录入 + 任务草稿 + 标准样/试样测量流程</text>
+</svg>

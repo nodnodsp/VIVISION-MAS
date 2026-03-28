@@ -11,63 +11,364 @@
         MinHeight="820"
         Loaded="MainWindow_OnLoaded"
         WindowStartupLocation="CenterScreen"
-        Background="#0F172A">
+        Background="#F3F4F6">
+    <Window.Resources>
+        <Style x:Key="ShellMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="8,4" />
+        </Style>
+        <Style x:Key="ToolbarActionButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="96" />
+            <Setter Property="Height" Value="68" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#D1D5DB" />
+            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="MainSampleFilterButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinWidth" Value="78" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#D1D5DB" />
+            <Setter Property="Foreground" Value="#111827" />
+        </Style>
+        <Style x:Key="MainTableHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#F5F3FB" />
+            <Setter Property="Foreground" Value="#1F2937" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderBrush" Value="#E5E7EB" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+            <Setter Property="Padding" Value="10,8" />
+        </Style>
+        <Style x:Key="MainTableCellStyle" TargetType="{x:Type DataGridCell}">
+            <Setter Property="BorderBrush" Value="#E5E7EB" />
+            <Setter Property="BorderThickness" Value="0,0,1,1" />
+            <Setter Property="Padding" Value="10,8" />
+        </Style>
+        <Style x:Key="MainTableRowStyle" TargetType="{x:Type DataGridRow}">
+            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#EEE8FA" />
+                    <Setter Property="Foreground" Value="#111827" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="72" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="60" />
             <RowDefinition Height="34" />
+            <RowDefinition Height="96" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="28" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="320" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#0B1225">
-            <Grid Margin="24,0">
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#C9B8EA">
+            <Grid Margin="18,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                    <TextBlock Text="MAS V1 多角度测色仪工作台" Foreground="White" FontSize="26" FontWeight="Bold" />
-                    <TextBlock Text="1.0 开发版 / WPF + .NET 8 / SQLite" Foreground="#93C5FD" FontSize="13" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="∠" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,0,14,0" />
+                    <TextBlock Text="MSQC" Foreground="White" FontSize="26" FontWeight="Bold" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="环境状态：" Foreground="#CBD5E1" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <Border Background="#14532D" CornerRadius="10" Padding="10,4">
-                        <TextBlock Text="已就绪" Foreground="White" FontWeight="SemiBold" />
+                    <TextBlock Text="◔" Foreground="#F5EEFF" FontSize="18" Margin="0,0,10,0" />
+                    <TextBlock Text="◈" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
+                    <TextBlock Text="ⓘ" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
+                    <TextBlock Text="—" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
+                    <TextBlock Text="□" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
+                    <TextBlock Text="×" Foreground="#F5EEFF" FontSize="16" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Menu Grid.Row="1" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1" ItemContainerStyle="{StaticResource ShellMenuItemStyle}">
+            <MenuItem Header="文件(F)">
+                <MenuItem Header="新建项目(N)" Click="InitializeDatabaseButton_OnClick" />
+                <MenuItem Header="打开项目(O)" Tag="dashboard" Click="NavigationButton_OnClick" />
+                <MenuItem Header="保存项目(S)" IsEnabled="False" />
+                <MenuItem Header="另存为(A)" Tag="另存为" Click="ShellPlaceholderAction_OnClick" />
+                <Separator />
+                <MenuItem Header="打印(P)" InputGestureText="Ctrl+P" Click="OpenSelectedReportButton_OnClick" />
+                <MenuItem Header="导出(E)" Click="ExportReportButton_OnClick" />
+                <Separator />
+                <MenuItem Header="退出(X)" Click="CloseWindowMenuItem_OnClick" />
+            </MenuItem>
+            <MenuItem Header="仪器(I)">
+                <MenuItem Header="连接(C)" Click="ConnectInstrumentButton_OnClick" />
+                <MenuItem Header="连接方式">
+                    <MenuItem Header="模拟模式" Tag="连接方式/模拟模式" Click="ShellPlaceholderAction_OnClick" />
+                    <MenuItem Header="串口模式" Tag="连接方式/串口模式" Click="ShellPlaceholderAction_OnClick" />
+                    <MenuItem Header="蓝牙模式(预留)" Tag="连接方式/蓝牙模式" Click="ShellPlaceholderAction_OnClick" />
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="仪器信息" Tag="仪器信息" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="校准" Click="WhiteCalibrationButton_OnClick" />
+                <MenuItem Header="测量标准样" Click="ExecuteStandardMeasurementButton_OnClick" />
+                <MenuItem Header="测量试样" Click="ExecuteTrialMeasurementButton_OnClick" />
+                <MenuItem Header="测量模式" Tag="测量模式" Click="ShellPlaceholderAction_OnClick" />
+                <Separator />
+                <MenuItem Header="仪器数据管理" Tag="instrument" Click="NavigationButton_OnClick" />
+                <Separator />
+                <MenuItem Header="断开连接(D)" Click="DisconnectInstrumentButton_OnClick" />
+            </MenuItem>
+            <MenuItem Header="色库管理">
+                <MenuItem Header="管理色库..." Tag="standard" Click="NavigationButton_OnClick" />
+                <MenuItem Header="颜色录入..." Tag="sample" Click="NavigationButton_OnClick" />
+            </MenuItem>
+            <MenuItem Header="设置">
+                <MenuItem Header="默认光源/观察者" Tag="默认光源/观察者" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="光源设置" Tag="光源设置" Click="ShellPlaceholderAction_OnClick" />
+                <Separator />
+                <MenuItem Header="默认容差" Tag="默认容差" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="容差设置" Tag="template" Click="NavigationButton_OnClick" />
+                <Separator />
+                <MenuItem Header="默认显示数据项" Tag="默认显示数据项" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="显示的数据项" Tag="显示的数据项" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="自动命名设置" Tag="自动命名设置" Click="ShellPlaceholderAction_OnClick" />
+                <Separator />
+                <MenuItem Header="语言" Tag="语言" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="主题" Tag="主题" Click="ShellPlaceholderAction_OnClick" />
+            </MenuItem>
+            <MenuItem Header="帮助(H)">
+                <MenuItem Header="帮助" Tag="帮助" Click="ShellPlaceholderAction_OnClick" />
+                <MenuItem Header="关于" Tag="关于" Click="ShellPlaceholderAction_OnClick" />
+            </MenuItem>
+        </Menu>
+
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal" Margin="14,10,14,10">
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="InitializeDatabaseButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="✚" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="新建项目" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="dashboard" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="☷" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="打开项目" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" IsEnabled="False" Foreground="#9CA3AF">
+                        <StackPanel>
+                            <TextBlock Text="⬒" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="保存项目" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Border Width="1" Height="56" Background="#E5E7EB" Margin="10,6,14,6" />
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="WhiteCalibrationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="◎" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="校准" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="ExecuteStandardMeasurementButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="◉" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="测量标准" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="ExecuteTrialMeasurementButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="◌" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="测量试样" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Border Width="1" Height="56" Background="#E5E7EB" Margin="10,6,14,6" />
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="measurement_center" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="▦" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="测量中心" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="measurement_analysis" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="≣" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="结果分析" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="standard" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="◫" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="色库管理" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="sample" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="☰" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="样品管理" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Tag="template" Click="NavigationButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="⌘" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="容差设置" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Border Width="1" Height="56" Background="#E5E7EB" Margin="10,6,14,6" />
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="OpenSelectedReportButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="⎙" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="打印" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="ExportReportButton_OnClick">
+                        <StackPanel>
+                            <TextBlock Text="⇩" FontSize="20" HorizontalAlignment="Center" />
+                            <TextBlock Text="导出" Margin="0,6,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Border Grid.Row="3" Grid.Column="0" Margin="12,12,10,12" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="34" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border Background="#F9FAFB" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Margin="10,0" VerticalAlignment="Center">
+                        <TextBlock Text="📁" FontSize="16" Margin="0,0,8,0" />
+                        <TextBlock Text="项目浏览器" Foreground="#111827" FontSize="14" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Row="1" Margin="8,8,8,10">
+                    <Grid Margin="6,2,6,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📁" Margin="0,0,8,0" FontSize="16" />
+                            <TextBlock Text="Project001" Foreground="#111827" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="2026-03-25" Foreground="#6B7280" FontSize="12" VerticalAlignment="Center" />
+                    </Grid>
+                    <Border Background="#EEE8FA" BorderBrush="#D8CCF2" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8">
+                        <Grid Margin="12,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="◉" Foreground="#7C3AED" FontSize="16" Margin="0,0,8,0" />
+                                <TextBlock Text="粗糙面" Foreground="#111827" FontSize="14" FontWeight="SemiBold" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="2026-03-25 10:48:55" Foreground="#4B5563" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <Border Background="Transparent" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6">
+                        <Grid Margin="12,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="◌" Foreground="#7C3AED" FontSize="16" Margin="0,0,8,0" />
+                                <TextBlock Text="光滑面" Foreground="#111827" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="2026-03-25 10:49:47" Foreground="#6B7280" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
                     </Border>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Grid.Column="0" Margin="18" Background="#0B1225" CornerRadius="20" BorderBrush="#1E293B" BorderThickness="1">
-            <StackPanel Margin="18">
-                <TextBlock Text="导航" Foreground="#38BDF8" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16" />
-                <Border Background="#0F766E" CornerRadius="12" Padding="14" Margin="0,0,0,10">
-                    <TextBlock Text="首页总览" Foreground="White" FontSize="16" FontWeight="SemiBold" />
-                </Border>
-                <TextBlock Text="仪器连接" Foreground="#E2E8F0" FontSize="16" Margin="14,10,0,0" />
-                <TextBlock Text="测量中心" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="结果分析" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="样品管理" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="颜色库" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="容差设置" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="报告中心" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-                <TextBlock Text="系统设置" Foreground="#E2E8F0" FontSize="16" Margin="14,16,0,0" />
-            </StackPanel>
-        </Border>
-
-        <Grid Grid.Row="1" Grid.Column="1" Margin="0,18,18,18">
+        <Grid Grid.Row="3" Grid.Column="1" Margin="0,12,12,12">
             <Grid.RowDefinitions>
-                <RowDefinition Height="168" />
-                <RowDefinition Height="220" />
+                <RowDefinition Height="120" />
+                <RowDefinition Height="120" />
                 <RowDefinition Height="2*" />
-                <RowDefinition Height="180" />
+                <RowDefinition Height="150" />
             </Grid.RowDefinitions>
-
-            <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,18">
+            <Border Grid.Row="0" Grid.RowSpan="4" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="10">
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="样品数据显示" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" />
+                            <TextBlock Text="主界面工作区先按参考软件收敛为单一表格视图，样品主数据仍保持实时联动。" Margin="0,8,0,0" FontSize="13" Foreground="#6B7280" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#F5F3FB" BorderBrush="#D8CCF2" BorderThickness="1" CornerRadius="16" Padding="14,8" VerticalAlignment="Center">
+                            <TextBlock x:Name="MainSampleCountTextBlock" Text="共 0 条样品" Foreground="#5B21B6" FontSize="13" FontWeight="SemiBold" />
+                        </Border>
+                    </Grid>
+                    <Border Grid.Row="1" Margin="0,14,0,12" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="关键字" Margin="0,8,8,0" Foreground="#4B5563" />
+                            <TextBox x:Name="MainSampleFilterTextBox" Width="220" Height="32" Margin="0,0,12,0" VerticalContentAlignment="Center" />
+                            <TextBlock Text="状态" Margin="0,8,8,0" Foreground="#4B5563" />
+                            <ComboBox x:Name="MainSampleStatusFilterComboBox" Width="130" Height="32" SelectedIndex="0" Margin="0,0,12,0">
+                                <ComboBoxItem Content="全部" />
+                                <ComboBoxItem Content="active" />
+                                <ComboBoxItem Content="pending" />
+                                <ComboBoxItem Content="passed" />
+                                <ComboBoxItem Content="disabled" />
+                            </ComboBox>
+                            <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="筛选" Click="ApplyMainSampleFilterButton_OnClick" />
+                            <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="清空" Click="ClearMainSampleFilterButton_OnClick" />
+                        </WrapPanel>
+                    </Border>
+                    <Border Grid.Row="2" Margin="0,0,0,14" Background="#FAF8FF" BorderBrush="#E9E0F7" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                        <TextBlock x:Name="MainSampleSelectionTextBlock" Text="当前未选中样品。" FontSize="13" Foreground="#4B5563" />
+                    </Border>
+                    <DataGrid x:Name="MainSampleDisplayGrid"
+                              Grid.Row="3"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Background="#FFFFFF"
+                              Foreground="#111827"
+                              BorderBrush="#D1D5DB"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Horizontal"
+                              AlternatingRowBackground="#FBF9FE"
+                              RowBackground="#FFFFFF"
+                              ColumnHeaderStyle="{StaticResource MainTableHeaderStyle}"
+                              CellStyle="{StaticResource MainTableCellStyle}"
+                              RowStyle="{StaticResource MainTableRowStyle}"
+                              SelectionChanged="MainSampleDisplayGrid_OnSelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="样品编号" Binding="{Binding SampleCode}" Width="180" />
+                            <DataGridTextColumn Header="样品名称" Binding="{Binding SampleName}" Width="220" />
+                            <DataGridTextColumn Header="批次" Binding="{Binding BatchNo}" Width="170" />
+                            <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="170" />
+                            <DataGridTextColumn Header="颜色名称" Binding="{Binding ColorName}" Width="170" />
+                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="更新时间" Binding="{Binding UpdatedAt}" Width="220" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+<UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,18" Visibility="Collapsed">
                 <Border Margin="0,0,12,0" Background="#13233D" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel Margin="20">
                         <TextBlock Text="设备状态" Foreground="#93C5FD" FontSize="15" />
@@ -98,7 +399,7 @@
                 </Border>
             </UniformGrid>
 
-            <Grid Grid.Row="1" Margin="0,0,0,18">
+            <Grid Grid.Row="1" Margin="0,0,0,18" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*" />
                     <ColumnDefinition Width="1.2*" />
@@ -108,7 +409,7 @@
                         <TextBlock Text="快速操作" Foreground="White" FontSize="24" FontWeight="SemiBold" />
                         <TextBlock Text="先完成数据库和主数据初始化，再逐步接真实设备与测量流程。" Foreground="#94A3B8" FontSize="14" Margin="0,8,0,18" />
                         <WrapPanel>
-                            <Button x:Name="InitializeDatabaseButton" Content="初始化数据库" Width="148" Height="44" Margin="0,0,12,12" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="InitializeDatabaseButton_OnClick" />
+                            <Button Content="初始化数据库" Width="148" Height="44" Margin="0,0,12,12" Background="#14B8A6" Foreground="White" BorderBrush="#14B8A6" Click="InitializeDatabaseButton_OnClick" />
                             <Button Content="生成任务草稿" Width="148" Height="44" Margin="0,0,12,12" Background="#0EA5E9" Foreground="White" BorderBrush="#0EA5E9" Click="CreateDraftTaskButton_OnClick" />
                             <Button Content="标准样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#22C55E" Foreground="White" BorderBrush="#22C55E" Click="ExecuteStandardMeasurementButton_OnClick" />
                             <Button Content="试样测量" Width="148" Height="44" Margin="0,0,12,12" Background="#2563EB" Foreground="White" BorderBrush="#2563EB" Click="ExecuteTrialMeasurementButton_OnClick" />
@@ -126,7 +427,7 @@
                 </Border>
             </Grid>
 
-            <TabControl Grid.Row="2" Margin="0,0,0,18" Background="#101B33" BorderBrush="#334155" Foreground="White">
+            <TabControl x:Name="WorkspaceTabControl" Grid.Row="2" Margin="0,0,0,18" Background="#101B33" BorderBrush="#334155" Foreground="White" Visibility="Collapsed">
                 <TabItem Header="仪器连接">
                     <Grid Margin="18">
                         <Grid.ColumnDefinitions>
@@ -160,7 +461,7 @@
                             <DataGrid x:Name="InstrumentGrid"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -180,7 +481,7 @@
                                       Margin="0,18,0,0"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -235,7 +536,7 @@
                                       Grid.Row="1"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -292,7 +593,7 @@
                                       Grid.Row="1"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -349,7 +650,7 @@
                                       Grid.Row="1"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -412,7 +713,7 @@
                                   Grid.Row="2"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
-                                  Background="#0F172A"
+                                  Background="#F3F4F6"
                                   Foreground="White"
                                   BorderBrush="#334155"
                                   HeadersVisibility="Column"
@@ -537,7 +838,7 @@
                                       Grid.Row="2"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
-                                      Background="#0F172A"
+                                      Background="#F3F4F6"
                                       Foreground="White"
                                       BorderBrush="#334155"
                                       HeadersVisibility="Column"
@@ -564,7 +865,7 @@
                                     <DataGrid x:Name="AngleResultGrid"
                                               AutoGenerateColumns="False"
                                               IsReadOnly="True"
-                                              Background="#0F172A"
+                                              Background="#F3F4F6"
                                               Foreground="White"
                                               BorderBrush="#334155"
                                               HeadersVisibility="Column"
@@ -583,7 +884,7 @@
                                     <DataGrid x:Name="EffectResultGrid"
                                               AutoGenerateColumns="False"
                                               IsReadOnly="True"
-                                              Background="#0F172A"
+                                              Background="#F3F4F6"
                                               Foreground="White"
                                               BorderBrush="#334155"
                                               HeadersVisibility="Column"
@@ -632,7 +933,7 @@
                                   Grid.Row="1"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
-                                  Background="#0F172A"
+                                  Background="#F3F4F6"
                                   Foreground="White"
                                   BorderBrush="#334155"
                                   HeadersVisibility="Column"
@@ -653,12 +954,12 @@
                                 <ColumnDefinition Width="0.95*" />
                             </Grid.ColumnDefinitions>
                             <GroupBox Header="历史日志" Margin="0,0,9,0" Foreground="White" BorderBrush="#334155">
-                                <TabControl Background="#0F172A" BorderBrush="#334155" Foreground="White">
+                                <TabControl Background="#F3F4F6" BorderBrush="#334155" Foreground="White">
                                     <TabItem Header="操作日志">
                                         <DataGrid x:Name="OperationLogGrid"
                                                   AutoGenerateColumns="False"
                                                   IsReadOnly="True"
-                                                  Background="#0F172A"
+                                                  Background="#F3F4F6"
                                                   Foreground="White"
                                                   BorderBrush="#334155"
                                                   HeadersVisibility="Column"
@@ -676,7 +977,7 @@
                                         <DataGrid x:Name="RawPacketGrid"
                                                   AutoGenerateColumns="False"
                                                   IsReadOnly="True"
-                                                  Background="#0F172A"
+                                                  Background="#F3F4F6"
                                                   Foreground="White"
                                                   BorderBrush="#334155"
                                                   HeadersVisibility="Column"
@@ -790,7 +1091,7 @@
                 </TabItem>
             </TabControl>
 
-            <Border Grid.Row="3" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1">
+            <Border Grid.Row="3" Background="#101B33" CornerRadius="20" BorderBrush="#334155" BorderThickness="1" Visibility="Collapsed">
                 <Grid Margin="18">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -799,7 +1100,7 @@
                     <TextBlock Text="运行日志" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
                     <TextBox x:Name="LogTextBox"
                              Grid.Row="1"
-                             Background="#0F172A"
+                             Background="#F3F4F6"
                              Foreground="#E2E8F0"
                              BorderBrush="#334155"
                              IsReadOnly="True"
@@ -810,11 +1111,19 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#0B1225">
-            <TextBlock Text="MAS V1 / 当前阶段：数据库初始化 + 主数据录入 + 任务草稿 + 标准样/试样测量流程" Foreground="#94A3B8" VerticalAlignment="Center" Margin="20,0" />
+        <Border Grid.Row="4" Grid.ColumnSpan="2" Background="#C9B8EA">
+            <TextBlock x:Name="FooterStatusTextBlock" Text="Ready  |  MAS V1 当前阶段：样品数据显示主视图" Foreground="White" VerticalAlignment="Center" Margin="20,0" />
         </Border>
     </Grid>
 </Window>
+
+
+
+
+
+
+
+
 
 
 
