@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MAS.Application.Abstractions;
 using MAS.Application.Services;
 using MAS.Core.Entities;
@@ -13,6 +14,7 @@ using MAS.Infrastructure.Database;
 using MAS.Infrastructure.Operations;
 using MAS.Infrastructure.Repositories;
 using MAS.Infrastructure.Runtime;
+using MAS.WinUI.Models;
 
 namespace MAS.WinUI;
 
@@ -42,7 +44,8 @@ public partial class MainWindow : Window
     private string _runtimeDescription = "模拟仪器模式 / 无需真实串口协议";
     private IReadOnlyList<MeasurementTask> _allTasks = Array.Empty<MeasurementTask>();
     private IReadOnlyList<Sample> _allSamples = Array.Empty<Sample>();
-    private IReadOnlyList<Sample> _filteredMainSamples = Array.Empty<Sample>();
+    private IReadOnlyList<MainColorDisplayRow> _allMainColorDisplayRows = Array.Empty<MainColorDisplayRow>();
+    private IReadOnlyList<MainColorDisplayRow> _filteredMainColorDisplayRows = Array.Empty<MainColorDisplayRow>();
     private IReadOnlyList<StandardSample> _allStandardSamples = Array.Empty<StandardSample>();
     private IReadOnlyList<ToleranceTemplate> _allTemplates = Array.Empty<ToleranceTemplate>();
     private IReadOnlyList<MeasurementRecord> _allMeasurementRecords = Array.Empty<MeasurementRecord>();
@@ -276,7 +279,12 @@ public partial class MainWindow : Window
 
     private async void ConnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await ChangeInstrumentConnectionAsync(true);
+        await OpenInstrumentConnectWindowAsync();
+    }
+
+    private async void OpenInstrumentConnectWindow_OnClick(object sender, RoutedEventArgs e)
+    {
+        await OpenInstrumentConnectWindowAsync();
     }
 
     private async void DisconnectInstrumentButton_OnClick(object sender, RoutedEventArgs e)
@@ -324,7 +332,7 @@ public partial class MainWindow : Window
     private void ApplyMainSampleFilterButton_OnClick(object sender, RoutedEventArgs e)
     {
         ApplyMainSampleFilters();
-        AppendLog("主样品表筛选条件已应用。");
+        AppendLog("主颜色数据表筛选条件已应用。");
     }
 
     private void ClearMainSampleFilterButton_OnClick(object sender, RoutedEventArgs e)
@@ -332,44 +340,54 @@ public partial class MainWindow : Window
         MainSampleFilterTextBox.Clear();
         MainSampleStatusFilterComboBox.SelectedIndex = 0;
         ApplyMainSampleFilters();
-        AppendLog("主样品表筛选条件已应用。");
+        AppendLog("主颜色数据表筛选条件已清空。");
     }
 
     private async void SampleGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (SampleGrid.SelectedItem is Sample sample)
         {
-            if (!Equals(MainSampleDisplayGrid.SelectedItem, sample))
+            var row = TryResolveDisplayRowForSample(sample.Id);
+            if (row is not null && !Equals(MainSampleDisplayGrid.SelectedItem, row))
             {
-                MainSampleDisplayGrid.SelectedItem = sample;
+                MainSampleDisplayGrid.SelectedItem = row;
             }
 
             ApplySampleToInputs(sample);
             await LoadSampleSummaryAsync(sample);
-            UpdateMainSampleOverview(sample);
+            UpdateMainSampleOverview(row, sample);
         }
         else
         {
-            UpdateMainSampleOverview(null);
+            UpdateMainSampleOverview(null, null);
         }
     }
 
     private async void MainSampleDisplayGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (MainSampleDisplayGrid.SelectedItem is Sample sample)
+        if (MainSampleDisplayGrid.SelectedItem is MainColorDisplayRow row)
         {
-            if (!Equals(SampleGrid.SelectedItem, sample))
+            var sample = TryResolveSampleByDisplayRow(row);
+            if (sample is not null)
             {
-                SampleGrid.SelectedItem = sample;
+                if (!Equals(SampleGrid.SelectedItem, sample))
+                {
+                    SampleGrid.SelectedItem = sample;
+                }
+
+                ApplySampleToInputs(sample);
+                await LoadSampleSummaryAsync(sample);
+            }
+            else
+            {
+                ClearSampleSummary();
             }
 
-            ApplySampleToInputs(sample);
-            await LoadSampleSummaryAsync(sample);
-            UpdateMainSampleOverview(sample);
+            UpdateMainSampleOverview(row, sample);
         }
         else
         {
-            UpdateMainSampleOverview(null);
+            UpdateMainSampleOverview(null, null);
         }
     }
 
@@ -1004,6 +1022,7 @@ private async Task LoadSettingsAsync()
         _allReportExports = reportExports;
         _allOperationLogs = operationLogs;
         _allRawPackets = rawPackets;
+        _allMainColorDisplayRows = await BuildMainColorDisplayRowsAsync(records, tasks, samples, standards);
 
         InstrumentGrid.ItemsSource = instruments;
         SampleGrid.ItemsSource = _allSamples;
@@ -1013,20 +1032,21 @@ private async Task LoadSettingsAsync()
         ApplyRecordFilters();
         ApplyReportFilters();
 
-        var selectedSample = _filteredMainSamples.FirstOrDefault() ?? _allSamples.FirstOrDefault();
+        var selectedRow = _filteredMainColorDisplayRows.FirstOrDefault() ?? _allMainColorDisplayRows.FirstOrDefault();
+        MainSampleDisplayGrid.SelectedItem = selectedRow;
+        var selectedSample = selectedRow is null ? _allSamples.FirstOrDefault() : TryResolveSampleByDisplayRow(selectedRow);
         SampleGrid.SelectedItem = selectedSample;
-        MainSampleDisplayGrid.SelectedItem = selectedSample;
         if (selectedSample is not null)
         {
             ApplySampleToInputs(selectedSample);
             await LoadSampleSummaryAsync(selectedSample);
-            UpdateMainSampleOverview(selectedSample);
         }
         else
         {
             ClearSampleSummary();
-            UpdateMainSampleOverview(null);
         }
+
+        UpdateMainSampleOverview(selectedRow, selectedSample);
 
         var selectedStandard = _allStandardSamples.FirstOrDefault();
         StandardSampleGrid.SelectedItem = selectedStandard;
@@ -1267,66 +1287,217 @@ private async Task LoadSettingsAsync()
         SampleUsageTextBlock.Text = "-";
     }
 
-    private void UpdateMainSampleOverview(Sample? sample)
+    private void UpdateMainSampleOverview(MainColorDisplayRow? row, Sample? sample)
     {
-        MainSampleCountTextBlock.Text = _filteredMainSamples.Count == _allSamples.Count
-            ? $"共 {_allSamples.Count} 条样品"
-            : $"当前 {_filteredMainSamples.Count} / 总 {_allSamples.Count} 条样品";
-        MainSampleSelectionTextBlock.Text = sample is null
-            ? "当前未选中样品"
-            : $"当前选中: {sample.SampleCode} / {sample.SampleName} / {sample.Status} / {sample.MaterialName ?? "未设置材质"}";
-        UpdateFooterStatus(sample);
+        MainSampleCountTextBlock.Text = _filteredMainColorDisplayRows.Count == _allMainColorDisplayRows.Count
+            ? $"共 {_allMainColorDisplayRows.Count} 条数据"
+            : $"当前 {_filteredMainColorDisplayRows.Count} / 总 {_allMainColorDisplayRows.Count} 条数据";
+
+        MainSampleSelectionTextBlock.Text = row is null
+            ? (sample is null ? "当前未选中颜色数据。" : $"样品 {sample.SampleCode} 当前暂无颜色数据。")
+            : $"当前选中: {row.Name} / {row.Angle} / {row.LightSource} / {row.Observer} / {row.TimeText}";
+
+        UpdateFooterStatus(row);
     }
 
     private void ApplyMainSampleFilters()
     {
         var keyword = MainSampleFilterTextBox.Text?.Trim();
-        var selectedStatus = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        var selectedType = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
-        var filtered = _allSamples.Where(sample =>
+        var filtered = _allMainColorDisplayRows.Where(row =>
         {
             var matchesKeyword = string.IsNullOrWhiteSpace(keyword)
-                || sample.SampleCode.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                || sample.SampleName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                || (sample.BatchNo?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
-                || (sample.MaterialName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false)
-                || (sample.ColorName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false);
+                || row.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || row.Angle.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || row.LightSource.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || row.Observer.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                || row.TimeText.Contains(keyword, StringComparison.OrdinalIgnoreCase);
 
-            var matchesStatus = string.IsNullOrWhiteSpace(selectedStatus)
-                || selectedStatus == "全部"
-                || string.Equals(sample.Status, selectedStatus, StringComparison.OrdinalIgnoreCase);
+            var matchesType = string.IsNullOrWhiteSpace(selectedType)
+                || selectedType == "全部"
+                || string.Equals(row.RecordType, selectedType, StringComparison.OrdinalIgnoreCase);
 
-            return matchesKeyword && matchesStatus;
+            return matchesKeyword && matchesType;
         }).ToList();
 
-        _filteredMainSamples = filtered;
-        MainSampleDisplayGrid.ItemsSource = _filteredMainSamples;
+        _filteredMainColorDisplayRows = filtered;
+        MainSampleDisplayGrid.ItemsSource = _filteredMainColorDisplayRows;
 
-        if (MainSampleDisplayGrid.SelectedItem is not Sample selected || !_filteredMainSamples.Any(x => x.Id == selected.Id))
+        if (MainSampleDisplayGrid.SelectedItem is not MainColorDisplayRow selected || !_filteredMainColorDisplayRows.Any(x => x.RecordId == selected.RecordId && x.Angle == selected.Angle))
         {
-            MainSampleDisplayGrid.SelectedItem = _filteredMainSamples.FirstOrDefault();
+            MainSampleDisplayGrid.SelectedItem = _filteredMainColorDisplayRows.FirstOrDefault();
         }
 
-        if (_filteredMainSamples.Count == 0)
+        if (_filteredMainColorDisplayRows.Count == 0)
         {
-            UpdateMainSampleOverview(null);
+            UpdateMainSampleOverview(null, SampleGrid.SelectedItem as Sample);
         }
-        else if (MainSampleDisplayGrid.SelectedItem is Sample current)
+        else if (MainSampleDisplayGrid.SelectedItem is MainColorDisplayRow current)
         {
-            UpdateMainSampleOverview(current);
+            UpdateMainSampleOverview(current, TryResolveSampleByDisplayRow(current));
         }
     }
 
-    private void UpdateFooterStatus(Sample? sample)
+    private void UpdateFooterStatus(MainColorDisplayRow? row)
     {
         var keyword = MainSampleFilterTextBox.Text?.Trim();
-        var selectedStatus = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "全部";
-        var filterSummary = string.IsNullOrWhiteSpace(keyword) && selectedStatus == "全部"
+        var selectedType = (MainSampleStatusFilterComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "全部";
+        var filterSummary = string.IsNullOrWhiteSpace(keyword) && selectedType == "全部"
             ? "未筛选"
-            : $"筛选: 关键字={keyword ?? "-"} / 状态={selectedStatus}";
-        var sampleSummary = sample is null ? "当前未选中样品" : $"当前样品: {sample.SampleCode}";
-        FooterStatusTextBlock.Text = $"Ready  |  样品视图 {filterSummary}  |  {sampleSummary}";
+            : $"筛选: 关键字={keyword ?? "-"} / 类型={selectedType}";
+        var rowSummary = row is null ? "当前未选中颜色数据" : $"当前数据: {row.Name} / {row.Angle}";
+        FooterStatusTextBlock.Text = $"Ready  |  颜色数据视图 {filterSummary}  |  {rowSummary}";
     }
+
+    private Sample? TryResolveSampleByDisplayRow(MainColorDisplayRow row)
+    {
+        if (string.IsNullOrWhiteSpace(row.SampleId))
+        {
+            return null;
+        }
+
+        return _allSamples.FirstOrDefault(x => x.Id == row.SampleId);
+    }
+
+    private MainColorDisplayRow? TryResolveDisplayRowForSample(string sampleId)
+    {
+        return _filteredMainColorDisplayRows.FirstOrDefault(x => x.SampleId == sampleId)
+            ?? _allMainColorDisplayRows.FirstOrDefault(x => x.SampleId == sampleId);
+    }
+
+    private async Task<IReadOnlyList<MainColorDisplayRow>> BuildMainColorDisplayRowsAsync(
+        IReadOnlyList<MeasurementRecord> records,
+        IReadOnlyList<MeasurementTask> tasks,
+        IReadOnlyList<Sample> samples,
+        IReadOnlyList<StandardSample> standards)
+    {
+        var taskById = tasks.ToDictionary(x => x.Id, x => x);
+        var sampleById = samples.ToDictionary(x => x.Id, x => x);
+        var standardById = standards.ToDictionary(x => x.Id, x => x);
+        var rows = new List<MainColorDisplayRow>();
+
+        foreach (var record in records.OrderByDescending(x => x.MeasuredAt))
+        {
+            var angleResults = await _angleResultRepository.GetByRecordIdAsync(record.Id);
+            if (!taskById.TryGetValue(record.TaskId, out var task))
+            {
+                continue;
+            }
+
+            sampleById.TryGetValue(task.SampleId ?? string.Empty, out var sampleRow);
+            standardById.TryGetValue(task.StandardSampleId ?? string.Empty, out var standardRow);
+            var displayName = sampleRow?.SampleName ?? standardRow?.StandardName ?? task.TaskCode;
+            var measuredAt = record.MeasuredAt.Kind == DateTimeKind.Utc ? record.MeasuredAt.ToLocalTime() : record.MeasuredAt;
+
+            foreach (var angle in angleResults)
+            {
+                var cStar = angle.CieA.HasValue && angle.CieB.HasValue
+                    ? Math.Sqrt(Math.Pow(angle.CieA.Value, 2) + Math.Pow(angle.CieB.Value, 2))
+                    : (double?)null;
+                var hStar = angle.CieA.HasValue && angle.CieB.HasValue
+                    ? (Math.Atan2(angle.CieB.Value, angle.CieA.Value) * 180.0 / Math.PI + 360.0) % 360.0
+                    : (double?)null;
+
+                rows.Add(new MainColorDisplayRow
+                {
+                    RecordId = record.Id,
+                    TaskId = task.Id,
+                    RecordType = record.RecordType,
+                    SampleId = sampleRow?.Id,
+                    StandardSampleId = standardRow?.Id,
+                    Name = displayName,
+                    Angle = angle.AngleCode,
+                    LightSource = "D65",
+                    Observer = "2°",
+                    SimulatedColorBrush = CreateSimulatedColorBrush(angle.CieL, angle.CieA, angle.CieB),
+                    TimeText = measuredAt.ToString("yyyy/M/d HH:mm:ss"),
+                    LStar = angle.CieL,
+                    AStar = angle.CieA,
+                    BStar = angle.CieB,
+                    CStar = cStar,
+                    HStar = hStar,
+                });
+            }
+        }
+
+        return rows;
+    }
+
+    private static Brush CreateSimulatedColorBrush(double? l, double? a, double? b)
+    {
+        if (!l.HasValue || !a.HasValue || !b.HasValue)
+        {
+            return Brushes.Transparent;
+        }
+
+        var brush = new SolidColorBrush(LabToColor(l.Value, a.Value, b.Value));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static Color LabToColor(double l, double a, double b)
+    {
+        static double Pivot(double value)
+        {
+            var cube = value * value * value;
+            return cube > 0.008856 ? cube : (value - 16.0 / 116.0) / 7.787;
+        }
+
+        var y = (l + 16.0) / 116.0;
+        var x = a / 500.0 + y;
+        var z = y - b / 200.0;
+
+        x = 95.047 * Pivot(x);
+        y = 100.000 * Pivot(y);
+        z = 108.883 * Pivot(z);
+
+        x /= 100.0;
+        y /= 100.0;
+        z /= 100.0;
+
+        var red = x * 3.2406 + y * -1.5372 + z * -0.4986;
+        var green = x * -0.9689 + y * 1.8758 + z * 0.0415;
+        var blue = x * 0.0557 + y * -0.2040 + z * 1.0570;
+
+        static double Gamma(double value)
+        {
+            return value > 0.0031308 ? 1.055 * Math.Pow(value, 1.0 / 2.4) - 0.055 : 12.92 * value;
+        }
+
+        return Color.FromRgb(
+            (byte)Math.Clamp(Math.Round(Gamma(red) * 255.0), 0, 255),
+            (byte)Math.Clamp(Math.Round(Gamma(green) * 255.0), 0, 255),
+            (byte)Math.Clamp(Math.Round(Gamma(blue) * 255.0), 0, 255));
+    }
+
+    private async Task OpenInstrumentConnectWindowAsync()
+    {
+        var dialog = new InstrumentConnectWindow(_appSettings.InstrumentPortName)
+        {
+            Owner = this,
+        };
+
+        if (dialog.ShowDialog() != true || dialog.Selection is null)
+        {
+            return;
+        }
+
+        _appSettings.InstrumentPortName = dialog.Selection.SelectedPortName;
+        _appSettings.InstrumentRuntimeMode = "SerialStub";
+        await _appSettingsStore.SaveAsync(_appSettings);
+        ApplySettingsToInputs();
+        ConfigureRuntimeServices();
+        UpdateSettingsSummary();
+        AppendLog($"已从连接弹窗选择端口: {dialog.Selection.SelectedPortName}");
+        if (!string.IsNullOrWhiteSpace(dialog.Selection.SelectedDeviceName))
+        {
+            AppendLog($"已识别蓝牙设备: {dialog.Selection.SelectedDeviceName}");
+        }
+
+        await ChangeInstrumentConnectionAsync(true);
+    }
+
     private void ClearStandardSummary()
     {
         StandardSummaryTextBlock.Text = "请选择一条标准样查看摘要。";
@@ -1592,6 +1763,9 @@ private void ApplyRecordToInputs(MeasurementRecord record, MeasurementAngleResul
         LogTextBox.ScrollToEnd();
     }
 }
+
+
+
 
 
 

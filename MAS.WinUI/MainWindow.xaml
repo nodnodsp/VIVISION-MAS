@@ -56,7 +56,7 @@
             <Setter Property="Background" Value="#FFFFFF" />
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#EEE8FA" />
+                    <Setter Property="Background" Value="#A7D59F" />
                     <Setter Property="Foreground" Value="#111827" />
                 </Trigger>
             </Style.Triggers>
@@ -109,7 +109,7 @@
                 <MenuItem Header="退出(X)" Click="CloseWindowMenuItem_OnClick" />
             </MenuItem>
             <MenuItem Header="仪器(I)">
-                <MenuItem Header="连接(C)" Click="ConnectInstrumentButton_OnClick" />
+                <MenuItem Header="连接(C)" Click="OpenInstrumentConnectWindow_OnClick" />
                 <MenuItem Header="连接方式">
                     <MenuItem Header="模拟模式" Tag="连接方式/模拟模式" Click="ShellPlaceholderAction_OnClick" />
                     <MenuItem Header="串口模式" Tag="连接方式/串口模式" Click="ShellPlaceholderAction_OnClick" />
@@ -313,31 +313,45 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="样品数据显示" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" />
-                            <TextBlock Text="主界面工作区先按参考软件收敛为单一表格视图，样品主数据仍保持实时联动。" Margin="0,8,0,0" FontSize="13" Foreground="#6B7280" />
+                            <TextBlock Text="颜色数据表" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" />
+                            <TextBlock Text="按名称、角度、光源、观察者与 Lab 结果展示当前颜色数据。" Margin="0,8,0,0" FontSize="13" Foreground="#6B7280" />
                         </StackPanel>
                         <Border Grid.Column="1" Background="#F5F3FB" BorderBrush="#D8CCF2" BorderThickness="1" CornerRadius="16" Padding="14,8" VerticalAlignment="Center">
-                            <TextBlock x:Name="MainSampleCountTextBlock" Text="共 0 条样品" Foreground="#5B21B6" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock x:Name="MainSampleCountTextBlock" Text="共 0 条数据" Foreground="#5B21B6" FontSize="13" FontWeight="SemiBold" />
                         </Border>
                     </Grid>
-                    <Border Grid.Row="1" Margin="0,14,0,12" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="12,10">
-                        <WrapPanel VerticalAlignment="Center">
-                            <TextBlock Text="关键字" Margin="0,8,8,0" Foreground="#4B5563" />
-                            <TextBox x:Name="MainSampleFilterTextBox" Width="220" Height="32" Margin="0,0,12,0" VerticalContentAlignment="Center" />
-                            <TextBlock Text="状态" Margin="0,8,8,0" Foreground="#4B5563" />
-                            <ComboBox x:Name="MainSampleStatusFilterComboBox" Width="130" Height="32" SelectedIndex="0" Margin="0,0,12,0">
-                                <ComboBoxItem Content="全部" />
-                                <ComboBoxItem Content="active" />
-                                <ComboBoxItem Content="pending" />
-                                <ComboBoxItem Content="passed" />
-                                <ComboBoxItem Content="disabled" />
-                            </ComboBox>
-                            <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="筛选" Click="ApplyMainSampleFilterButton_OnClick" />
-                            <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="清空" Click="ClearMainSampleFilterButton_OnClick" />
-                        </WrapPanel>
-                    </Border>
+                    <StackPanel Grid.Row="1" Margin="0,14,0,12">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="#2EA43A" CornerRadius="14,14,0,0" Padding="18,8" Margin="0,0,6,0">
+                                <TextBlock Text="颜色" Foreground="White" FontWeight="SemiBold" />
+                            </Border>
+                            <Border Background="#F3F4F6" CornerRadius="14,14,0,0" Padding="18,8" Margin="0,0,6,0">
+                                <TextBlock Text="效果色" Foreground="#6B7280" FontWeight="SemiBold" />
+                            </Border>
+                            <Border Background="#F3F4F6" CornerRadius="14,14,0,0" Padding="18,8" Margin="0,0,6,0">
+                                <TextBlock Text="光谱图" Foreground="#6B7280" FontWeight="SemiBold" />
+                            </Border>
+                            <Border Background="#F3F4F6" CornerRadius="14,14,0,0" Padding="18,8">
+                                <TextBlock Text="Lab Plot" Foreground="#6B7280" FontWeight="SemiBold" />
+                            </Border>
+                        </StackPanel>
+                        <Border Margin="0,0,0,12" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <WrapPanel VerticalAlignment="Center">
+                                <TextBlock Text="关键字" Margin="0,8,8,0" Foreground="#4B5563" />
+                                <TextBox x:Name="MainSampleFilterTextBox" Width="220" Height="32" Margin="0,0,12,0" VerticalContentAlignment="Center" />
+                                <TextBlock Text="类型" Margin="0,8,8,0" Foreground="#4B5563" />
+                                <ComboBox x:Name="MainSampleStatusFilterComboBox" Width="130" Height="32" SelectedIndex="0" Margin="0,0,12,0">
+                                    <ComboBoxItem Content="全部" />
+                                    <ComboBoxItem Content="standard" />
+                                    <ComboBoxItem Content="trial" />
+                                </ComboBox>
+                                <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="筛选" Click="ApplyMainSampleFilterButton_OnClick" />
+                                <Button Style="{StaticResource MainSampleFilterButtonStyle}" Content="清空" Click="ClearMainSampleFilterButton_OnClick" />
+                            </WrapPanel>
+                        </Border>
+                    </StackPanel>
                     <Border Grid.Row="2" Margin="0,0,0,14" Background="#FAF8FF" BorderBrush="#E9E0F7" BorderThickness="1" CornerRadius="8" Padding="12,10">
-                        <TextBlock x:Name="MainSampleSelectionTextBlock" Text="当前未选中样品。" FontSize="13" Foreground="#4B5563" />
+                        <TextBlock x:Name="MainSampleSelectionTextBlock" Text="当前未选中颜色数据。" FontSize="13" Foreground="#4B5563" />
                     </Border>
                     <DataGrid x:Name="MainSampleDisplayGrid"
                               Grid.Row="3"
@@ -357,13 +371,23 @@
                               RowStyle="{StaticResource MainTableRowStyle}"
                               SelectionChanged="MainSampleDisplayGrid_OnSelectionChanged">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="样品编号" Binding="{Binding SampleCode}" Width="180" />
-                            <DataGridTextColumn Header="样品名称" Binding="{Binding SampleName}" Width="220" />
-                            <DataGridTextColumn Header="批次" Binding="{Binding BatchNo}" Width="170" />
-                            <DataGridTextColumn Header="材质" Binding="{Binding MaterialName}" Width="170" />
-                            <DataGridTextColumn Header="颜色名称" Binding="{Binding ColorName}" Width="170" />
-                            <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="120" />
-                            <DataGridTextColumn Header="更新时间" Binding="{Binding UpdatedAt}" Width="220" />
+                            <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="150" />
+                            <DataGridTextColumn Header="角度" Binding="{Binding Angle}" Width="90" />
+                            <DataGridTextColumn Header="光源" Binding="{Binding LightSource}" Width="70" />
+                            <DataGridTextColumn Header="观察者" Binding="{Binding Observer}" Width="70" />
+                            <DataGridTemplateColumn Header="仿真色" Width="74">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Width="36" Height="18" Background="{Binding SimulatedColorBrush}" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="2" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="170" />
+                            <DataGridTextColumn Header="L*" Binding="{Binding LStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn Header="a*" Binding="{Binding AStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn Header="b*" Binding="{Binding BStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn Header="C*" Binding="{Binding CStar, StringFormat=F2}" Width="60" />
+                            <DataGridTextColumn Header="h*" Binding="{Binding HStar, StringFormat=F2}" Width="60" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -1116,6 +1140,10 @@
         </Border>
     </Grid>
 </Window>
+
+
+
+
 
 
 
