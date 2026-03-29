@@ -1,8 +1,9 @@
-﻿<Window x:Class="MAS.WinUI.MainWindow"
+<Window x:Class="MAS.WinUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="MAS V1 多角度测色仪工作台"
         Height="940"
@@ -11,7 +12,16 @@
         MinHeight="820"
         Loaded="MainWindow_OnLoaded"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Background="#F3F4F6">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="40"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="6"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <Style x:Key="ShellMenuItemStyle" TargetType="{x:Type MenuItem}">
             <Setter Property="Foreground" Value="#111827" />
@@ -22,12 +32,59 @@
             <Setter Property="Width" Value="96" />
             <Setter Property="Height" Value="68" />
             <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#D1D5DB" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#111827" />
             <Setter Property="Padding" Value="8" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ToolbarChrome" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToolbarChrome" Property="Background" Value="#EEF2FF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ToolbarChrome" Property="Background" Value="#E9E2F7" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ToolbarChrome" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CaptionButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#374151" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="CaptionChrome" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CaptionChrome" Property="Background" Value="#F3F4F6" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CaptionChrome" Property="Background" Value="#E5E7EB" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="MainSampleFilterButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Height" Value="34" />
@@ -62,10 +119,10 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
+    <Border BorderBrush="#D1D5DB" BorderThickness="1" Background="#F3F4F6">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="60" />
-            <RowDefinition Height="34" />
+            <RowDefinition Height="74" />
             <RowDefinition Height="96" />
             <RowDefinition Height="*" />
             <RowDefinition Height="28" />
@@ -75,82 +132,96 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#C9B8EA">
-            <Grid Margin="18,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="∠" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,0,14,0" />
-                    <TextBlock Text="MSQC" Foreground="White" FontSize="26" FontWeight="Bold" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="◔" Foreground="#F5EEFF" FontSize="18" Margin="0,0,10,0" />
-                    <TextBlock Text="◈" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
-                    <TextBlock Text="ⓘ" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
-                    <TextBlock Text="—" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
-                    <TextBlock Text="□" Foreground="#F5EEFF" FontSize="16" Margin="0,0,10,0" />
-                    <TextBlock Text="×" Foreground="#F5EEFF" FontSize="16" />
-                </StackPanel>
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40" />
+                    <RowDefinition Height="34" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" MouseLeftButtonDown="TopBar_OnMouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,20,0">
+                        <TextBlock Text="MAS V1" FontSize="16" FontWeight="SemiBold" Foreground="#111827" />
+                        <TextBlock Text=" &#x591A;&#x89D2;&#x5EA6;&#x6D4B;&#x8272;&#x4EEA;&#x5DE5;&#x4F5C;&#x53F0;" Margin="8,0,0,0" FontSize="13" Foreground="#6B7280" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Button Style="{StaticResource CaptionButtonStyle}" Click="MinimizeWindowButton_OnClick">
+                            <TextBlock Text="&#x2014;" FontSize="14" Foreground="#374151" />
+                        </Button>
+                        <Button Style="{StaticResource CaptionButtonStyle}" Click="ToggleWindowStateButton_OnClick">
+                            <TextBlock Text="&#x25A1;" FontSize="12" Foreground="#374151" />
+                        </Button>
+                        <Button Style="{StaticResource CaptionButtonStyle}" Click="CloseWindowButton_OnClick">
+                            <TextBlock Text="&#x00D7;" FontSize="14" Foreground="#374151" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <Menu Grid.Row="1"
+                      Background="Transparent"
+                      BorderThickness="0"
+                      ItemContainerStyle="{StaticResource ShellMenuItemStyle}"
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="&#x6587;&#x4EF6;(F)">
+                        <MenuItem Header="&#x65B0;&#x5EFA;&#x9879;&#x76EE;(N)" Click="InitializeDatabaseButton_OnClick" />
+                        <MenuItem Header="&#x6253;&#x5F00;&#x9879;&#x76EE;(O)" Tag="dashboard" Click="NavigationButton_OnClick" />
+                        <MenuItem Header="&#x4FDD;&#x5B58;&#x9879;&#x76EE;(S)" IsEnabled="False" />
+                        <MenuItem Header="&#x53E6;&#x5B58;&#x4E3A;(A)" Tag="&#x53E6;&#x5B58;&#x4E3A;" Click="ShellPlaceholderAction_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x6253;&#x5370;(P)" InputGestureText="Ctrl+P" Click="OpenSelectedReportButton_OnClick" />
+                        <MenuItem Header="&#x5BFC;&#x51FA;(E)" Click="ExportReportButton_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x9000;&#x51FA;(X)" Click="CloseWindowMenuItem_OnClick" />
+                    </MenuItem>
+                    <MenuItem Header="&#x4EEA;&#x5668;(I)">
+                        <MenuItem Header="&#x8FDE;&#x63A5;(C)" Click="OpenInstrumentConnectWindow_OnClick" />
+                        <MenuItem Header="&#x8FDE;&#x63A5;&#x65B9;&#x5F0F;">
+                            <MenuItem Header="&#x6A21;&#x62DF;&#x6A21;&#x5F0F;" Tag="&#x8FDE;&#x63A5;&#x65B9;&#x5F0F;/&#x6A21;&#x62DF;&#x6A21;&#x5F0F;" Click="ShellPlaceholderAction_OnClick" />
+                            <MenuItem Header="&#x4E32;&#x53E3;&#x6A21;&#x5F0F;" Tag="&#x8FDE;&#x63A5;&#x65B9;&#x5F0F;/&#x4E32;&#x53E3;&#x6A21;&#x5F0F;" Click="ShellPlaceholderAction_OnClick" />
+                            <MenuItem Header="&#x84DD;&#x7259;&#x6A21;&#x5F0F;(&#x9884;&#x7559;)" Tag="&#x8FDE;&#x63A5;&#x65B9;&#x5F0F;/&#x84DD;&#x7259;&#x6A21;&#x5F0F;" Click="ShellPlaceholderAction_OnClick" />
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="&#x4EEA;&#x5668;&#x4FE1;&#x606F;" Tag="&#x4EEA;&#x5668;&#x4FE1;&#x606F;" Click="ShellPlaceholderAction_OnClick" />
+                        <MenuItem Header="&#x6821;&#x51C6;" Click="WhiteCalibrationButton_OnClick" />
+                        <MenuItem Header="&#x6D4B;&#x91CF;&#x6807;&#x51C6;&#x6837;" Click="ExecuteStandardMeasurementButton_OnClick" />
+                        <MenuItem Header="&#x6D4B;&#x91CF;&#x8BD5;&#x6837;" Click="ExecuteTrialMeasurementButton_OnClick" />
+                        <MenuItem Header="&#x6D4B;&#x91CF;&#x6A21;&#x5F0F;" Tag="&#x6D4B;&#x91CF;&#x6A21;&#x5F0F;" Click="ShellPlaceholderAction_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x4EEA;&#x5668;&#x6570;&#x636E;&#x7BA1;&#x7406;" Tag="instrument" Click="NavigationButton_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x65AD;&#x5F00;&#x8FDE;&#x63A5;(D)" Click="DisconnectInstrumentButton_OnClick" />
+                    </MenuItem>
+                    <MenuItem Header="&#x8272;&#x5E93;&#x7BA1;&#x7406;">
+                        <MenuItem Header="&#x7BA1;&#x7406;&#x8272;&#x5E93;..." Tag="standard" Click="NavigationButton_OnClick" />
+                        <MenuItem Header="&#x989C;&#x8272;&#x5F55;&#x5165;..." Tag="sample" Click="NavigationButton_OnClick" />
+                    </MenuItem>
+                    <MenuItem Header="&#x8BBE;&#x7F6E;">
+                        <MenuItem Header="&#x9ED8;&#x8BA4;&#x5149;&#x6E90;/&#x89C2;&#x5BDF;&#x8005;" Click="OpenLightSourceObserverSettings_OnClick" />
+                        <MenuItem Header="&#x5149;&#x6E90;&#x8BBE;&#x7F6E;" Click="OpenLightSourceObserverSettings_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x9ED8;&#x8BA4;&#x5BB9;&#x5DEE;" Click="OpenToleranceSettings_OnClick" />
+                        <MenuItem Header="&#x5BB9;&#x5DEE;&#x8BBE;&#x7F6E;" Click="OpenToleranceSettings_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x9ED8;&#x8BA4;&#x663E;&#x793A;&#x6570;&#x636E;&#x9879;" Click="OpenDisplaySettings_OnClick" />
+                        <MenuItem Header="&#x663E;&#x793A;&#x7684;&#x6570;&#x636E;&#x9879;" Click="OpenDisplaySettings_OnClick" />
+                        <MenuItem Header="&#x81EA;&#x52A8;&#x547D;&#x540D;&#x8BBE;&#x7F6E;" Tag="&#x81EA;&#x52A8;&#x547D;&#x540D;&#x8BBE;&#x7F6E;" Click="ShellPlaceholderAction_OnClick" />
+                        <Separator />
+                        <MenuItem Header="&#x8BED;&#x8A00;" Tag="&#x8BED;&#x8A00;" Click="ShellPlaceholderAction_OnClick" />
+                        <MenuItem Header="&#x4E3B;&#x9898;" Tag="&#x4E3B;&#x9898;" Click="ShellPlaceholderAction_OnClick" />
+                    </MenuItem>
+                    <MenuItem Header="&#x5173;&#x4E8E;">
+                        <MenuItem Header="&#x4F7F;&#x7528;&#x8BF4;&#x660E;" Tag="&#x5E2E;&#x52A9;" Click="ShellPlaceholderAction_OnClick" />
+                        <MenuItem Header="&#x5173;&#x4E8E;&#x8F6F;&#x4EF6;" Tag="&#x5173;&#x4E8E;" Click="ShellPlaceholderAction_OnClick" />
+                    </MenuItem>
+                </Menu>
             </Grid>
         </Border>
 
-        <Menu Grid.Row="1" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1" ItemContainerStyle="{StaticResource ShellMenuItemStyle}">
-            <MenuItem Header="文件(F)">
-                <MenuItem Header="新建项目(N)" Click="InitializeDatabaseButton_OnClick" />
-                <MenuItem Header="打开项目(O)" Tag="dashboard" Click="NavigationButton_OnClick" />
-                <MenuItem Header="保存项目(S)" IsEnabled="False" />
-                <MenuItem Header="另存为(A)" Tag="另存为" Click="ShellPlaceholderAction_OnClick" />
-                <Separator />
-                <MenuItem Header="打印(P)" InputGestureText="Ctrl+P" Click="OpenSelectedReportButton_OnClick" />
-                <MenuItem Header="导出(E)" Click="ExportReportButton_OnClick" />
-                <Separator />
-                <MenuItem Header="退出(X)" Click="CloseWindowMenuItem_OnClick" />
-            </MenuItem>
-            <MenuItem Header="仪器(I)">
-                <MenuItem Header="连接(C)" Click="OpenInstrumentConnectWindow_OnClick" />
-                <MenuItem Header="连接方式">
-                    <MenuItem Header="模拟模式" Tag="连接方式/模拟模式" Click="ShellPlaceholderAction_OnClick" />
-                    <MenuItem Header="串口模式" Tag="连接方式/串口模式" Click="ShellPlaceholderAction_OnClick" />
-                    <MenuItem Header="蓝牙模式(预留)" Tag="连接方式/蓝牙模式" Click="ShellPlaceholderAction_OnClick" />
-                </MenuItem>
-                <Separator />
-                <MenuItem Header="仪器信息" Tag="仪器信息" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="校准" Click="WhiteCalibrationButton_OnClick" />
-                <MenuItem Header="测量标准样" Click="ExecuteStandardMeasurementButton_OnClick" />
-                <MenuItem Header="测量试样" Click="ExecuteTrialMeasurementButton_OnClick" />
-                <MenuItem Header="测量模式" Tag="测量模式" Click="ShellPlaceholderAction_OnClick" />
-                <Separator />
-                <MenuItem Header="仪器数据管理" Tag="instrument" Click="NavigationButton_OnClick" />
-                <Separator />
-                <MenuItem Header="断开连接(D)" Click="DisconnectInstrumentButton_OnClick" />
-            </MenuItem>
-            <MenuItem Header="色库管理">
-                <MenuItem Header="管理色库..." Tag="standard" Click="NavigationButton_OnClick" />
-                <MenuItem Header="颜色录入..." Tag="sample" Click="NavigationButton_OnClick" />
-            </MenuItem>
-            <MenuItem Header="设置">
-                <MenuItem Header="默认光源/观察者" Click="OpenLightSourceObserverSettings_OnClick" />
-                <MenuItem Header="光源设置" Click="OpenLightSourceObserverSettings_OnClick" />
-                <Separator />
-                <MenuItem Header="默认容差" Click="OpenToleranceSettings_OnClick" />
-                <MenuItem Header="容差设置" Click="OpenToleranceSettings_OnClick" />
-                <Separator />
-                <MenuItem Header="默认显示数据项" Click="OpenDisplaySettings_OnClick" />
-                <MenuItem Header="显示的数据项" Click="OpenDisplaySettings_OnClick" />
-                <MenuItem Header="自动命名设置" Tag="自动命名设置" Click="ShellPlaceholderAction_OnClick" />
-                <Separator />
-                <MenuItem Header="语言" Tag="语言" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="主题" Tag="主题" Click="ShellPlaceholderAction_OnClick" />
-            </MenuItem>
-            <MenuItem Header="帮助(H)">
-                <MenuItem Header="帮助" Tag="帮助" Click="ShellPlaceholderAction_OnClick" />
-                <MenuItem Header="关于" Tag="关于" Click="ShellPlaceholderAction_OnClick" />
-            </MenuItem>
-        </Menu>
-
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <StackPanel Orientation="Horizontal" Margin="14,10,14,10">
                     <Button Style="{StaticResource ToolbarActionButtonStyle}" Click="InitializeDatabaseButton_OnClick">
@@ -238,7 +309,7 @@
             </ScrollViewer>
         </Border>
 
-        <Border Grid.Row="3" Grid.Column="0" Margin="12,12,10,12" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1">
+        <Border Grid.Row="2" Grid.Column="0" Margin="12,12,10,12" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="34" />
@@ -292,7 +363,7 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="3" Grid.Column="1" Margin="0,12,12,12">
+        <Grid Grid.Row="2" Grid.Column="1" Margin="0,12,12,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="120" />
                 <RowDefinition Height="120" />
@@ -1135,11 +1206,13 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="4" Grid.ColumnSpan="2" Background="#C9B8EA">
+        <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#C9B8EA">
             <TextBlock x:Name="FooterStatusTextBlock" Text="Ready  |  MAS V1 当前阶段：样品数据显示主视图" Foreground="White" VerticalAlignment="Center" Margin="20,0" />
         </Border>
     </Grid>
+    </Border>
 </Window>
+
 
 
 

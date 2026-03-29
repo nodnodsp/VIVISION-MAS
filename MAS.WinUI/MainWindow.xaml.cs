@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using MAS.Application.Abstractions;
 using MAS.Application.Services;
@@ -190,6 +191,61 @@ public partial class MainWindow : Window
         await _toleranceSettingsStore.SaveAsync(_toleranceSettings);
         AppendLog($"容差设置已保存，类型 {_toleranceSettings.ToleranceType}，颜色容差 {_toleranceSettings.ColorToleranceItems.Count} 项。");
         MessageBox.Show(this, "容差设置已保存到本地配置文件。", "容差设置", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void TopBar_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (FindAncestor<MenuItem>(e.OriginalSource as DependencyObject) is not null
+            || FindAncestor<Button>(e.OriginalSource as DependencyObject) is not null)
+        {
+            return;
+        }
+
+        if (e.ClickCount == 2)
+        {
+            ToggleWindowState();
+            return;
+        }
+
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void MinimizeWindowButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void ToggleWindowStateButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ToggleWindowState();
+    }
+
+    private void CloseWindowButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void ToggleWindowState()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+            {
+                return match;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
     }
 
     private void CloseWindowMenuItem_OnClick(object sender, RoutedEventArgs e)
